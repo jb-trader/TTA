@@ -36,12 +36,12 @@ st.set_page_config(
 
 VERSION = "1.0"
 
-# Custom CSS
+# Custom CSS - Laptop-friendly font sizes
 st.markdown("""
 <style>
     section[data-testid="stSidebar"] {
-        width: 350px !important;
-        min-width: 350px !important;
+        width: 300px !important;
+        min-width: 300px !important;
     }
     .main .block-container {
         padding-top: 1rem !important;
@@ -54,134 +54,134 @@ st.markdown("""
         display: none !important;
     }
     
-    /* Increase dataframe font size - black and bold */
+    /* Dataframe font size */
     .stDataFrame {
-        font-size: 29px !important;
+        font-size: 14px !important;
     }
     .stDataFrame table {
-        font-size: 29px !important;
+        font-size: 14px !important;
     }
     .stDataFrame th {
-        font-size: 29px !important;
+        font-size: 14px !important;
         font-weight: bold !important;
         color: black !important;
     }
     .stDataFrame td {
-        font-size: 29px !important;
+        font-size: 14px !important;
         font-weight: bold !important;
         color: black !important;
     }
     
-    /* Increase general text size - black and bold */
+    /* General text size */
     .stMarkdown {
-        font-size: 27px !important;
-        font-weight: bold !important;
+        font-size: 15px !important;
+        font-weight: normal !important;
         color: black !important;
     }
     .stMarkdown p {
-        font-size: 27px !important;
-        font-weight: bold !important;
+        font-size: 15px !important;
+        font-weight: normal !important;
         color: black !important;
     }
     
-    /* Increase subheader size */
+    /* Subheader size */
     h2 {
-        font-size: 41px !important;
+        font-size: 24px !important;
         color: black !important;
     }
     h3 {
-        font-size: 35px !important;
+        font-size: 20px !important;
         color: black !important;
     }
     
-    /* Increase metric font sizes - black and bold */
+    /* Metric font sizes */
     [data-testid="stMetricValue"] {
-        font-size: 47px !important;
+        font-size: 28px !important;
         font-weight: bold !important;
         color: black !important;
     }
     [data-testid="stMetricLabel"] {
-        font-size: 27px !important;
+        font-size: 14px !important;
         font-weight: bold !important;
         color: black !important;
     }
     
-    /* Info box text - black and bold */
+    /* Info box text */
     .stAlert {
-        font-size: 27px !important;
-        font-weight: bold !important;
+        font-size: 14px !important;
+        font-weight: normal !important;
         color: black !important;
     }
     .stAlert p {
-        font-size: 27px !important;
-        font-weight: bold !important;
+        font-size: 14px !important;
+        font-weight: normal !important;
         color: black !important;
     }
     
     /* Selectbox and input labels */
     .stSelectbox label, .stNumberInput label {
-        font-size: 23px !important;
+        font-size: 14px !important;
     }
     
     /* Success box */
     .stSuccess {
-        font-size: 27px !important;
-        font-weight: bold !important;
+        font-size: 14px !important;
+        font-weight: normal !important;
         color: black !important;
     }
     
-    /* Sidebar text - consistent medium size */
+    /* Sidebar text */
     section[data-testid="stSidebar"] .stMarkdown {
-        font-size: 18px !important;
+        font-size: 14px !important;
         font-weight: normal !important;
     }
     section[data-testid="stSidebar"] .stMarkdown p {
-        font-size: 18px !important;
+        font-size: 14px !important;
         font-weight: normal !important;
     }
     section[data-testid="stSidebar"] h2 {
-        font-size: 24px !important;
+        font-size: 18px !important;
     }
     section[data-testid="stSidebar"] h3 {
-        font-size: 20px !important;
+        font-size: 16px !important;
     }
     section[data-testid="stSidebar"] .stAlert {
-        font-size: 16px !important;
+        font-size: 13px !important;
         font-weight: normal !important;
     }
     section[data-testid="stSidebar"] .stAlert p {
-        font-size: 16px !important;
+        font-size: 13px !important;
         font-weight: normal !important;
     }
     section[data-testid="stSidebar"] label {
-        font-size: 16px !important;
+        font-size: 13px !important;
     }
     section[data-testid="stSidebar"] .stCheckbox label span {
-        font-size: 16px !important;
+        font-size: 13px !important;
     }
     
-    /* Highlight expanders in light green with large text */
+    /* Expanders in light green */
     .streamlit-expanderHeader {
         background-color: #90EE90 !important;
         border-radius: 8px !important;
-        padding: 12px 15px !important;
-        font-size: 28px !important;
+        padding: 8px 12px !important;
+        font-size: 16px !important;
         font-weight: bold !important;
     }
     div[data-testid="stExpander"] > details > summary {
         background-color: #90EE90 !important;
         border-radius: 8px !important;
-        padding: 12px 15px !important;
-        font-size: 28px !important;
+        padding: 8px 12px !important;
+        font-size: 16px !important;
         font-weight: bold !important;
     }
-    /* Target ALL text inside expander header */
+    /* Text inside expander header */
     div[data-testid="stExpander"] > details > summary span,
     div[data-testid="stExpander"] > details > summary p,
     div[data-testid="stExpander"] > details > summary div,
     div[data-testid="stExpander"] summary span[data-testid="stMarkdownContainer"],
     div[data-testid="stExpander"] summary span[data-testid="stMarkdownContainer"] p {
-        font-size: 28px !important;
+        font-size: 16px !important;
         font-weight: bold !important;
         color: #1a1a1a !important;
     }
@@ -1010,11 +1010,11 @@ def main():
             display_recs = display_recs[['Day_of_week', 'Entry_Time', 'avg_profit', 'win_rate', 'trade_count', 'optimal_lookback']]
             display_recs.columns = ['Day', 'Entry Time', 'Avg Profit', 'Win Rate', 'Trades', 'Lookback']
             
-            # Generate HTML table with large bold black font
+            # Generate HTML table
             html_recs = display_recs.to_html(index=False, escape=False)
             html_recs = html_recs.replace('<table', '<table style="width:100%; border-collapse: collapse;"')
-            html_recs = html_recs.replace('<th>', '<th style="font-size: 28px; font-weight: bold; color: black; padding: 12px; border: 1px solid #ddd; background-color: #f5f5f5; text-align: center;">')
-            html_recs = html_recs.replace('<td>', '<td style="font-size: 28px; font-weight: bold; color: black; padding: 12px; border: 1px solid #ddd; text-align: center;">')
+            html_recs = html_recs.replace('<th>', '<th style="font-size: 14px; font-weight: bold; color: black; padding: 8px; border: 1px solid #ddd; background-color: #f5f5f5; text-align: center;">')
+            html_recs = html_recs.replace('<td>', '<td style="font-size: 14px; font-weight: bold; color: black; padding: 8px; border: 1px solid #ddd; text-align: center;">')
             st.markdown(html_recs, unsafe_allow_html=True)
             
             # Summary stats - use raw numeric values from potentials before formatting
@@ -1032,7 +1032,7 @@ def main():
             # Drill-down chart for selected day
             st.markdown("")
             st.markdown("---")
-            st.markdown("### 📈 Walk-Forward Performance Details by Day &nbsp;&nbsp;<span style='font-size: 28px; font-weight: normal; color: gray;'>*(filter changes applied when rerun)*</span>", unsafe_allow_html=True)
+            st.markdown("### 📈 Walk-Forward Performance Details by Day &nbsp;&nbsp;<span style='font-size: 14px; font-weight: normal; color: gray;'>*(filter changes applied when rerun)*</span>", unsafe_allow_html=True)
             
             with st.expander("ℹ️ What is Walk-Forward Analysis? Why is this data unbiased?  👇 CLICK HERE"):
                 st.markdown("""
