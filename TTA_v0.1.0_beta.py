@@ -1112,14 +1112,14 @@ This is as close to "real" performance as you can get without live trading.
                     fig_detail.update_layout(
                         title=dict(
                             text=f"{selected_day_detail} @ {day_entry_time} - Walk-Forward Performance ({day_optimal_lb} wk lookback)<br>"
-                                 f"<span style='font-size:20px;color:#666'>{selected_symbol} - {selected_name}</span>",
+                                 f"<span style='font-size:12px;color:#666'>{selected_symbol} - {selected_name}</span>",
                             x=0.5,
                             xanchor='center',
-                            font=dict(size=32)
+                            font=dict(size=18)
                         ),
                         xaxis_title="Test Week",
                         yaxis_title="Profit ($)",
-                        height=800,
+                        height=500,
                         hovermode='x unified',
                         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
                         plot_bgcolor='white',
@@ -1186,14 +1186,14 @@ This is as close to "real" performance as you can get without live trading.
         fig.update_layout(
             title=dict(
                 text=f"Walk-Forward Performance by Day (Using Optimal Lookback per Day)<br>"
-                     f"<span style='font-size:20px;color:#666'>{selected_symbol} - {selected_name}</span>",
+                     f"<span style='font-size:12px;color:#666'>{selected_symbol} - {selected_name}</span>",
                 x=0.5,
                 xanchor='center',
-                font=dict(size=32)
+                font=dict(size=18)
             ),
             xaxis_title="Test Week",
             yaxis_title="Cumulative Profit ($)",
-            height=1000,
+            height=600,
             hovermode='x unified',
             legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
             plot_bgcolor='white'
@@ -1244,7 +1244,9 @@ This is as close to "real" performance as you can get without live trading.
         # ====================================================================
         st.markdown("---")
         st.markdown("**CSV Download Files**")
-        col1, col2, col3, col4 = st.columns([1, 1, 1, 3])
+        
+        # Download buttons in a row
+        col1, col2, col3, col4 = st.columns([1, 1, 1, 2])
         
         with col1:
             csv_optimal = optimal_by_day.to_csv(index=False)
@@ -1254,23 +1256,6 @@ This is as close to "real" performance as you can get without live trading.
                 file_name=f"WF_OptimalByDay_{selected_symbol}_{selected_name}_{datetime.now():%Y%m%d}.csv",
                 mime="text/csv"
             )
-            with st.expander("ℹ️ What's in this file?"):
-                st.markdown("""
-**Optimal by Day** contains the single best lookback period for each day of the week:
-
-| Column | Description |
-|--------|-------------|
-| `day_of_week` | Monday - Friday |
-| `lookback_weeks` | The optimal lookback period selected |
-| `total_profit` | Sum of walk-forward profits |
-| `avg_profit` | Average profit per test week |
-| `total_trades` | Total trades in walk-forward tests |
-| `avg_win_rate` | Average win rate |
-| `weeks_tested` | Number of test weeks |
-| `r_squared` | Equity curve consistency (0-1, higher = smoother) |
-
-*This is the "winning" lookback for each day based on highest avg profit (filtered by min R² if set).*
-                """)
         
         with col2:
             csv_summary = summary_df.to_csv(index=False)
@@ -1280,27 +1265,9 @@ This is as close to "real" performance as you can get without live trading.
                 file_name=f"WF_Summary_{selected_symbol}_{selected_name}_{datetime.now():%Y%m%d}.csv",
                 mime="text/csv"
             )
-            with st.expander("ℹ️ What's in this file?"):
-                st.markdown("""
-**Full Summary** contains walk-forward results for ALL day × lookback combinations:
-
-| Column | Description |
-|--------|-------------|
-| `day_of_week` | Monday - Friday |
-| `lookback_weeks` | Each lookback period tested (2, 3, 4... N) |
-| `total_profit` | Sum of walk-forward profits |
-| `avg_profit` | Average profit per test week |
-| `total_trades` | Total trades (filtered >20) |
-| `avg_win_rate` | Average win rate |
-| `weeks_tested` | Number of test weeks |
-| `r_squared` | Equity curve consistency (0-1, higher = smoother) |
-
-*Use this to see runner-up lookbacks, compare R² values, or analyze robustness across different lookback periods.*
-                """)
         
         with col3:
             if not recommendations.empty:
-                # Create simplified potentials file with just Day and Entry_Time
                 potentials_df = recommendations[['Day_of_week', 'Entry_Time']].copy()
                 potentials_df.columns = ['Day', 'Entry_Time']
                 csv_potentials = potentials_df.to_csv(index=False)
@@ -1310,26 +1277,56 @@ This is as close to "real" performance as you can get without live trading.
                     file_name=f"WF_Potentials_{selected_symbol}_{selected_name}_{datetime.now():%Y%m%d}.csv",
                     mime="text/csv"
                 )
-                with st.expander("ℹ️ What's in this file?"):
-                    st.markdown("""
-**Potentials** is a simple 2-column file for next week's trading:
-
-| Column | Description |
-|--------|-------------|
-| `Day` | Monday - Friday |
-| `Entry_Time` | Recommended entry time for that day |
-
-*This is the actionable output - one entry time per day based on optimal lookback analysis.*
-                    """)
         
         with col4:
             st.markdown(
-                "<p style='font-size: 14px; color: red; background-color: yellow; margin-top: 12px; padding: 8px;'>"
-                "<strong>Disclaimer:</strong> Educational use only – not financial advice. Past performance does not equal future results. "
-                "Do not trade with money you can not afford to lose. These are not recommended trades!"
+                "<p style='font-size: 12px; color: red; background-color: yellow; margin-top: 0px; padding: 6px;'>"
+                "<strong>Disclaimer:</strong> Educational use only – not financial advice. Past performance ≠ future results. "
+                "Do not trade with money you cannot afford to lose."
                 "</p>",
                 unsafe_allow_html=True
             )
+        
+        # File descriptions in expanders - full width below buttons
+        with st.expander("ℹ️ What's in these files? (click to expand)"):
+            desc_col1, desc_col2, desc_col3 = st.columns(3)
+            
+            with desc_col1:
+                st.markdown("""
+**📥 Optimal by Day**
+
+Best lookback for each day:
+- `day_of_week` - Mon-Fri
+- `lookback_weeks` - Optimal period
+- `avg_profit` - Avg per test week
+- `total_trades` - WF trade count
+- `avg_win_rate` - Win rate
+- `r_squared` - Consistency (0-1)
+                """)
+            
+            with desc_col2:
+                st.markdown("""
+**📥 Full Summary**
+
+ALL day × lookback combos:
+- `day_of_week` - Mon-Fri
+- `lookback_weeks` - Each tested
+- `avg_profit` - Avg per test week
+- `total_trades` - Trade count (>20)
+- `avg_win_rate` - Win rate
+- `r_squared` - Consistency (0-1)
+                """)
+            
+            with desc_col3:
+                st.markdown("""
+**📥 Potentials**
+
+Simple 2-column actionable output:
+- `Day` - Monday-Friday
+- `Entry_Time` - Recommended time
+
+*Use this for next week's trading.*
+                """)
 
 
 if __name__ == "__main__":
