@@ -776,7 +776,7 @@ def get_week_recommendations(df, optimal_by_day, week_offset=1):
 # ============================================================================
 
 def main():
-    st.title("🎱 Time Trends Auto (TTA v0.1.1 beta) by jb-trader")
+    st.markdown("# 🎱 Time Trends Auto (TTA v0.1.1 beta) <span style='font-size: 18px; font-style: italic; color: blue;'>by jb-trader</span>", unsafe_allow_html=True)
     st.markdown("*TTA uses walk-forward analysis to automatically find the optimal lookback period for each day of the week, then presents the best entry time per day based on historical average profit.*")
     
     with st.expander("ℹ️ About TTA - Key Features & How It Differs from TTD & TTV  👇 CLICK HERE"):
