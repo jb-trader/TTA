@@ -664,14 +664,29 @@ def select_optimal_lookbacks(summary, min_r_squared=0.0):
     return optimal_by_day
 
 
-def get_next_week_recommendations(df, optimal_by_day):
+def get_week_recommendations(df, optimal_by_day, week_offset=1):
     """
-    Generate potentials for next week using day-specific optimal lookback periods.
+    Generate potentials for a target week using day-specific optimal lookback periods.
+    
+    Args:
+        df: DataFrame with trade data
+        optimal_by_day: DataFrame with optimal lookback for each day
+        week_offset: 0 = current week, 1 = next week (default)
     
     For each day, use its optimal lookback to find the single best Entry_Time.
     """
     max_date = df['Date'].max().date()
     current_week_start = get_week_start(max_date)
+    
+    # Adjust the reference point based on week_offset
+    if week_offset == 0:
+        # Current week: use data through previous Friday
+        reference_week_start = current_week_start - timedelta(weeks=1)
+        lookback_end = current_week_start - timedelta(days=3)  # Previous Friday
+    else:
+        # Next week (default): use all available data
+        reference_week_start = current_week_start
+        lookback_end = max_date
     
     recommendations = []
     
@@ -693,8 +708,7 @@ def get_next_week_recommendations(df, optimal_by_day):
             continue
         
         # Lookback window for this day
-        lookback_start = current_week_start - timedelta(weeks=optimal_lookback)
-        lookback_end = max_date
+        lookback_start = reference_week_start - timedelta(weeks=optimal_lookback)
         
         # Get training data for this day
         train_data = df[
@@ -765,9 +779,9 @@ def main():
     st.title("🎱 Time Trends Auto (TTA v0.1.0 beta)")
     st.markdown("*TTA uses walk-forward analysis to automatically find the optimal lookback period for each day of the week, then presents the best entry time per day based on historical average profit.*")
     
-    with st.expander("ℹ️ About TTA - Key Features & How It Differs from TTD  👇 CLICK HERE"):
+    with st.expander("ℹ️ About TTA - Key Features & How It Differs from TTD & TTV  👇 CLICK HERE"):
         st.markdown("""
-<div style="font-size: 18px;">
+<div style="font-size: 14px;">
 
 **Key Features:**
 - **Automatic Optimization** - Finds the optimal lookback period (2 to N weeks) for each day of the week
@@ -776,17 +790,18 @@ def main():
 - **Weekly Potentials** - Outputs one potential entry time per day based on optimal lookback
 - **One-Click Analysis** - Just select Symbol/Strategy and run
 
-**How TTA Differs from Time Trends Dashboard (TTD):**
+**How TTA Differs from TTD and TTV:**
 
-| | TTA | TTD |
-|---|---|---|
-| **Approach** | Prescriptive - "here's what to consider" | Exploratory - "analyze what you select" |
-| **Automation** | Auto-finds optimal lookbacks | User chooses parameters |
-| **Complexity** | Simple, focused | Feature-rich, detailed |
-| **Validation** | Walk-forward + R² | WF + Monte Carlo + Stability |
-| **Best For** | Weekly planning | Deep pattern research |
+| | TTA | TTD | TTV |
+|---|---|---|---|
+| **Platform** | Web app | Web app | Web app |
+| **Approach** | Prescriptive - "here's what to consider" | Exploratory - "analyze what you select" | Visual - charts & equity curves |
+| **Automation** | Auto-finds optimal lookbacks | User chooses parameters | User chooses parameters |
+| **Complexity** | Simple, focused | Feature-rich | Most detailed |
+| **Metrics** | Avg Profit + R² | WF + Monte Carlo + Stability | R², Sortino, Sharpe, Profit Factor |
+| **Best For** | Weekly planning | Deep pattern research | Visual pattern discovery |
 
-**Think of TTA as the "quick answer" tool and TTD as the "deep investigation" tool.**
+**TTA** = Quick answer → **TTD** = Deep investigation → **TTV** = Visual deep-dive
 
 </div>
         """, unsafe_allow_html=True)
@@ -931,14 +946,17 @@ def main():
     should_run = run_button or first_load or (auto_run and filters_changed and 'summary_df' in st.session_state)
     
     if should_run:
-        st.markdown("---")
-        st.subheader("⏳ Running Walk-Forward Analysis...")
-        
+        status_placeholder = st.empty()
+        status_placeholder.subheader("⏳ Running Walk-Forward Analysis...")
         progress_bar = st.progress(0)
+        
         result = run_walk_forward_analysis(
             filtered_df, 
             progress_bar=progress_bar
         )
+        
+        # Clear the status message and progress bar
+        status_placeholder.empty()
         progress_bar.empty()
         
         if result[0] is None:
@@ -980,22 +998,39 @@ def main():
         
         
         # ====================================================================
-        # NEXT WEEK POTENTIALS
+        # WEEKLY POTENTIALS
         # ====================================================================
         st.markdown("---")
-        st.subheader("🎱 Next Week Potential (Best Entry Time per Day)")
+        st.subheader("🎱 Weekly Potential (Best Entry Time per Day)")
         
-        recommendations = get_next_week_recommendations(filtered_df, optimal_by_day)
+        # Week selection toggle
+        week_selection = st.radio(
+            "Select Week:",
+            ["Next Week", "Current Week"],
+            horizontal=True,
+            help="Next Week uses all available data. Current Week uses data through previous Friday."
+        )
+        week_offset = 0 if week_selection == "Current Week" else 1
+        
+        recommendations = get_week_recommendations(filtered_df, optimal_by_day, week_offset=week_offset)
         
         if recommendations.empty:
-            st.warning("No slots meet the criteria for next week potentials.")
+            st.warning("No slots meet the criteria for weekly potentials.")
         else:
-            # Calculate next week dates
+            # Calculate target week dates
             max_date = filtered_df['Date'].max().date()
-            next_monday = get_week_start(max_date) + timedelta(weeks=1)
-            next_friday = next_monday + timedelta(days=4)
+            current_week_start = get_week_start(max_date)
             
-            st.info(f"**Trading Week:** {next_monday:%B %d, %Y} - {next_friday:%B %d, %Y} _and current week_")
+            if week_offset == 0:
+                # Current week
+                target_monday = current_week_start
+                target_friday = target_monday + timedelta(days=4)
+            else:
+                # Next week
+                target_monday = current_week_start + timedelta(weeks=1)
+                target_friday = target_monday + timedelta(days=4)
+            
+            st.info(f"**Trading Week:** {target_monday:%B %d, %Y} - {target_friday:%B %d, %Y}")
             st.write(f"**Symbol:** {selected_symbol} | **Strategy:** {selected_name}")
             st.markdown("*In-sample test stats*")
             
