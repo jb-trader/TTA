@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Time Trends Auto (TTA v0.1.0 beta)
+Time Trends Auto (TTA v0.1.1 beta) by jb-trader
 Finds optimal lookback period (in weeks) for Entry_Time × Day_of_week profit optimization.
 Conducts walk-forward analysis to validate lookback selection.
 
@@ -28,7 +28,7 @@ warnings.filterwarnings('ignore')
 # PAGE CONFIG
 # ============================================================================
 st.set_page_config(
-    page_title="Time Trends Auto (TTA v0.1.0 beta)",
+    page_title="Time Trends Auto (TTA v0.1.1 beta) by jb-trader",
     page_icon="🎱",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -776,7 +776,7 @@ def get_week_recommendations(df, optimal_by_day, week_offset=1):
 # ============================================================================
 
 def main():
-    st.title("🎱 Time Trends Auto (TTA v0.1.0 beta)")
+    st.title("🎱 Time Trends Auto (TTA v0.1.1 beta) by jb-trader")
     st.markdown("*TTA uses walk-forward analysis to automatically find the optimal lookback period for each day of the week, then presents the best entry time per day based on historical average profit.*")
     
     with st.expander("ℹ️ About TTA - Key Features & How It Differs from TTD & TTV  👇 CLICK HERE"):
