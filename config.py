@@ -1,9 +1,13 @@
 """
 Configuration file for TTA (Time Trends Auto)
 
-Handles secrets for both local development and Streamlit Cloud deployment.
+Works with:
+- Railway (environment variables)
+- Streamlit Cloud (st.secrets)
+- Local development (fallback)
 """
 
+import os
 import streamlit as st
 
 # ============================================================================
@@ -12,17 +16,21 @@ import streamlit as st
 
 def get_file_id():
     """
-    Get Google Drive file ID from Streamlit secrets (cloud) or fallback (local).
-    
-    To set up in Streamlit Cloud:
-    1. Go to your app → Settings → Secrets
-    2. Add: GOOGLE_DRIVE_FILE_ID = "your-file-id-here"
+    Get Google Drive file ID from environment variable, Streamlit secrets, or fallback.
     """
+    # 1. Try environment variable (Railway)
+    file_id = os.environ.get("GOOGLE_DRIVE_FILE_ID")
+    if file_id:
+        return file_id
+    
+    # 2. Try Streamlit secrets (Streamlit Cloud)
     try:
         return st.secrets["GOOGLE_DRIVE_FILE_ID"]
     except (KeyError, FileNotFoundError):
-        # Local development fallback - replace with your actual file ID
-        return "YOUR_FILE_ID_HERE"
+        pass
+    
+    # 3. Local development fallback
+    return "YOUR_FILE_ID_HERE"
 
 
 def get_data_url():
@@ -57,7 +65,7 @@ FOMC_DATES = [
 
 
 # ============================================================================
-# EARNINGS DATES (Major earnings that move SPX - AAPL, MSFT, NVDA, etc.)
+# EARNINGS DATES (Major earnings that move SPX)
 # ============================================================================
 
 EARNINGS_DATES = [
