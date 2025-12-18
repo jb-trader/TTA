@@ -36,9 +36,27 @@ st.set_page_config(
 
 VERSION = "1.0"
 
-# Custom CSS - Laptop-friendly font sizes
+# Custom CSS - Laptop-friendly font sizes + Force light theme
 st.markdown("""
 <style>
+    /* Force light theme regardless of user preference */
+    .stApp {
+        background-color: #ffffff !important;
+        color: #000000 !important;
+    }
+    .stApp [data-testid="stAppViewContainer"] {
+        background-color: #ffffff !important;
+    }
+    .stApp [data-testid="stSidebar"] {
+        background-color: #f0f2f6 !important;
+    }
+    .stApp [data-testid="stSidebar"] * {
+        color: #000000 !important;
+    }
+    .stMarkdown, .stMarkdown p, .stText {
+        color: #000000 !important;
+    }
+    
     section[data-testid="stSidebar"] {
         width: 300px !important;
         min-width: 300px !important;
@@ -337,16 +355,36 @@ def get_rebalancing_dates_to_exclude(rebalancing_dates, exclude_month_end, exclu
     return dates_to_exclude
 
 
-def load_earnings_fomc_dates():
-    """Load earnings and FOMC dates from config."""
+def load_fomc_dates():
+    """Load FOMC announcement dates from config."""
     try:
         dates = set()
         if hasattr(cfg, 'FOMC_DATES'):
             fomc = pd.to_datetime(cfg.FOMC_DATES, errors='coerce').dropna()
             dates.update(d.date() for d in fomc)
+        return dates
+    except Exception:
+        return set()
+
+
+def load_earnings_dates():
+    """Load earnings dates from config (E: earnings day only)."""
+    try:
+        dates = set()
         if hasattr(cfg, 'EARNINGS_DATES'):
             earn = pd.to_datetime(cfg.EARNINGS_DATES, errors='coerce').dropna()
             dates.update(d.date() for d in earn)
+        return dates
+    except Exception:
+        return set()
+
+
+def load_earnings_plus1_dates():
+    """Load earnings +1 dates from config (E+1: next business day after earnings)."""
+    try:
+        dates = set()
+        if hasattr(cfg, 'EARNINGS_DATES'):
+            earn = pd.to_datetime(cfg.EARNINGS_DATES, errors='coerce').dropna()
             for d in earn:
                 next_day = d + pd.offsets.BDay(1)
                 dates.add(next_day.date())
@@ -844,10 +882,16 @@ def main():
     min_date = filtered_df['Date'].min()
     max_date = filtered_df['Date'].max()
     rebalancing_dates = compute_rebalancing_dates(min_date.date(), max_date.date())
-    fomc_earnings_dates = load_earnings_fomc_dates()
+    fomc_dates = load_fomc_dates()
+    earnings_dates = load_earnings_dates()
+    earnings_plus1_dates = load_earnings_plus1_dates()
     
-    # FOMC & Earnings filter
-    exclude_fomc_earnings = st.sidebar.checkbox("Exclude FOMC & Earnings", value=True)
+    # FOMC filter
+    exclude_fomc = st.sidebar.checkbox("Exclude FOMC", value=True, help="FOMC announcement days")
+    
+    # Earnings filters - separate E and E+1
+    exclude_earnings_e = st.sidebar.checkbox("Exclude Earnings (E)", value=True, help="Major earnings announcement days")
+    exclude_earnings_e1 = st.sidebar.checkbox("Exclude Earnings (E+1)", value=True, help="Day after major earnings")
     
     # Butterfly Strike Liquidity filter - only show for Butterfly strategies
     exclude_illiquid_strikes = False
@@ -872,9 +916,17 @@ def main():
     rebal_dates = get_rebalancing_dates_to_exclude(rebalancing_dates, rebal_month_end, rebal_t1, rebal_t2, rebal_qtr_only)
     dates_to_exclude.update(rebal_dates)
     
-    # Add FOMC/Earnings dates
-    if exclude_fomc_earnings:
-        dates_to_exclude.update(fomc_earnings_dates)
+    # Add FOMC dates
+    if exclude_fomc:
+        dates_to_exclude.update(fomc_dates)
+    
+    # Add Earnings (E) dates
+    if exclude_earnings_e:
+        dates_to_exclude.update(earnings_dates)
+    
+    # Add Earnings (E+1) dates
+    if exclude_earnings_e1:
+        dates_to_exclude.update(earnings_plus1_dates)
     
     if dates_to_exclude:
         filtered_df = filtered_df[~filtered_df['Date'].dt.date.isin(dates_to_exclude)]
@@ -926,7 +978,9 @@ def main():
         'rebal_t1': rebal_t1,
         'rebal_t2': rebal_t2,
         'rebal_qtr_only': rebal_qtr_only,
-        'exclude_fomc_earnings': exclude_fomc_earnings,
+        'exclude_fomc': exclude_fomc,
+        'exclude_earnings_e': exclude_earnings_e,
+        'exclude_earnings_e1': exclude_earnings_e1,
         'exclude_illiquid_strikes': exclude_illiquid_strikes,
         'min_r_squared': min_r_squared
     }
