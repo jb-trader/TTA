@@ -39,12 +39,35 @@ VERSION = "1.0"
 # Custom CSS - Laptop-friendly font sizes + Light theme (mobile-friendly)
 st.markdown("""
 <style>
-    /* Force light background only - let Streamlit handle element colors */
+    /* Force light background for dark mode users */
     .stApp {
         background-color: #ffffff !important;
     }
     .stApp [data-testid="stAppViewContainer"] {
         background-color: #ffffff !important;
+    }
+    
+    /* Force black text for labels and text elements (dark mode fix) */
+    .stApp label {
+        color: black !important;
+    }
+    .stApp [data-testid="stMarkdownContainer"] {
+        color: black !important;
+    }
+    .stApp [data-testid="stMarkdownContainer"] p,
+    .stApp [data-testid="stMarkdownContainer"] span {
+        color: black !important;
+    }
+    
+    /* Force sidebar light background for dark mode users */
+    section[data-testid="stSidebar"] {
+        background-color: #f0f2f6 !important;
+    }
+    section[data-testid="stSidebar"] > div {
+        background-color: #f0f2f6 !important;
+    }
+    section[data-testid="stSidebar"] [data-testid="stSidebarContent"] {
+        background-color: #f0f2f6 !important;
     }
     
     /* Sidebar - desktop only width constraint */
@@ -154,9 +177,19 @@ st.markdown("""
         color: black !important;
     }
     
-    /* Selectbox and input labels */
+    /* Selectbox, input, and radio labels */
     .stSelectbox label, .stNumberInput label {
         font-size: 14px !important;
+        color: black !important;
+    }
+    .stRadio label {
+        color: black !important;
+    }
+    .stRadio div[role="radiogroup"] label {
+        color: black !important;
+    }
+    .stRadio div[role="radiogroup"] label span {
+        color: black !important;
     }
     
     /* Success box */
@@ -170,16 +203,20 @@ st.markdown("""
     section[data-testid="stSidebar"] .stMarkdown {
         font-size: 14px !important;
         font-weight: normal !important;
+        color: black !important;
     }
     section[data-testid="stSidebar"] .stMarkdown p {
         font-size: 14px !important;
         font-weight: normal !important;
+        color: black !important;
     }
     section[data-testid="stSidebar"] h2 {
         font-size: 18px !important;
+        color: black !important;
     }
     section[data-testid="stSidebar"] h3 {
         font-size: 16px !important;
+        color: black !important;
     }
     section[data-testid="stSidebar"] .stAlert {
         font-size: 13px !important;
@@ -191,9 +228,20 @@ st.markdown("""
     }
     section[data-testid="stSidebar"] label {
         font-size: 13px !important;
+        color: black !important;
     }
     section[data-testid="stSidebar"] .stCheckbox label span {
         font-size: 13px !important;
+        color: black !important;
+    }
+    section[data-testid="stSidebar"] .stSelectbox label,
+    section[data-testid="stSidebar"] .stSlider label,
+    section[data-testid="stSidebar"] .stRadio label {
+        color: black !important;
+    }
+    section[data-testid="stSidebar"] p,
+    section[data-testid="stSidebar"] span {
+        color: black !important;
     }
     
     /* Expanders in light green */
