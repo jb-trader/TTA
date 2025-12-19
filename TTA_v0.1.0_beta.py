@@ -36,31 +36,26 @@ st.set_page_config(
 
 VERSION = "1.0"
 
-# Custom CSS - Laptop-friendly font sizes + Force light theme
+# Custom CSS - Laptop-friendly font sizes + Light theme (mobile-friendly)
 st.markdown("""
 <style>
-    /* Force light theme regardless of user preference */
+    /* Force light background only - let Streamlit handle element colors */
     .stApp {
         background-color: #ffffff !important;
-        color: #000000 !important;
     }
     .stApp [data-testid="stAppViewContainer"] {
         background-color: #ffffff !important;
     }
-    .stApp [data-testid="stSidebar"] {
-        background-color: #f0f2f6 !important;
-    }
-    .stApp [data-testid="stSidebar"] * {
-        color: #000000 !important;
-    }
-    .stMarkdown, .stMarkdown p, .stText {
-        color: #000000 !important;
+    
+    /* Sidebar - desktop only width constraint */
+    @media (min-width: 768px) {
+        section[data-testid="stSidebar"] {
+            width: 300px !important;
+            min-width: 300px !important;
+            background-color: #f0f2f6 !important;
+        }
     }
     
-    section[data-testid="stSidebar"] {
-        width: 300px !important;
-        min-width: 300px !important;
-    }
     .main .block-container {
         padding-top: 1rem !important;
         max-width: 100% !important;
