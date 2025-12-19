@@ -19,11 +19,105 @@ import requests
 from io import BytesIO
 import re
 import pytz
+from fpdf import FPDF
 
 # Import config for Google Drive URL and exclusion dates
 import config as cfg
 
 warnings.filterwarnings('ignore')
+
+# ============================================================================
+# PDF GENERATION FOR TRADE PLAN
+# ============================================================================
+
+def generate_trade_plan_pdf(week_type, target_monday, target_friday, symbol, strategy, recommendations_df):
+    """
+    Generate a clean PDF of the trade plan.
+    
+    Args:
+        week_type: "Next Week" or "Current Week"
+        target_monday: Start date of trading week
+        target_friday: End date of trading week
+        symbol: Trading symbol (e.g., "SPX")
+        strategy: Strategy name (e.g., "Butterfly")
+        recommendations_df: DataFrame with Day_of_week and Entry_Time columns
+    
+    Returns:
+        PDF bytes for download
+    """
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_auto_page_break(auto=True, margin=15)
+    
+    # Title
+    pdf.set_font('Helvetica', 'B', 18)
+    pdf.cell(0, 12, 'TTA Trade Plan', ln=True, align='C')
+    pdf.ln(5)
+    
+    # Week type indicator
+    pdf.set_font('Helvetica', '', 12)
+    week_indicator = f"({week_type})"
+    pdf.cell(0, 8, week_indicator, ln=True, align='C')
+    pdf.ln(3)
+    
+    # Trading week box
+    pdf.set_fill_color(240, 248, 255)  # Light blue background
+    pdf.set_font('Helvetica', 'B', 11)
+    date_range = f"Trading Week: {target_monday:%B %d, %Y} - {target_friday:%B %d, %Y}"
+    pdf.cell(0, 10, date_range, ln=True, align='C', fill=True)
+    pdf.ln(5)
+    
+    # Symbol and Strategy
+    pdf.set_font('Helvetica', '', 11)
+    pdf.cell(0, 8, f"Symbol: {symbol} | Strategy: {strategy}", ln=True, align='C')
+    pdf.ln(3)
+    
+    # "In-sample test stats" label
+    pdf.set_font('Helvetica', 'I', 10)
+    pdf.set_text_color(100, 100, 100)
+    pdf.cell(0, 6, 'In-sample test stats', ln=True, align='C')
+    pdf.set_text_color(0, 0, 0)
+    pdf.ln(5)
+    
+    # Table - calculate column positions for centering
+    table_width = 120
+    col_width = table_width / 2  # 60 each
+    x_start = (210 - table_width) / 2  # Center on A4 page (210mm width)
+    
+    # Table header
+    pdf.set_font('Helvetica', 'B', 11)
+    pdf.set_fill_color(245, 245, 245)
+    pdf.set_x(x_start)
+    pdf.cell(col_width, 10, 'Day', border=1, align='C', fill=True)
+    pdf.cell(col_width, 10, 'Entry Time', border=1, align='C', fill=True)
+    pdf.ln()
+    
+    # Table rows
+    pdf.set_font('Helvetica', '', 11)
+    for _, row in recommendations_df.iterrows():
+        pdf.set_x(x_start)
+        day = row['Day_of_week'] if 'Day_of_week' in row else row.get('Day', '')
+        entry_time = row['Entry_Time'] if 'Entry_Time' in row else row.get('Entry Time', '')
+        
+        # Skip rows with no valid lookback
+        if entry_time in ['No Valid Lookback', 'No Data', 'N/A', '']:
+            continue
+            
+        pdf.cell(col_width, 10, str(day), border=1, align='C')
+        pdf.cell(col_width, 10, str(entry_time), border=1, align='C')
+        pdf.ln()
+    
+    pdf.ln(10)
+    
+    # Footer with timestamp
+    pdf.set_font('Helvetica', 'I', 9)
+    pdf.set_text_color(128, 128, 128)
+    pdf.cell(0, 6, f"Generated: {datetime.now():%Y-%m-%d %H:%M}", ln=True, align='C')
+    pdf.cell(0, 6, "TTA - Time Trends Auto by jb-trader", ln=True, align='C')
+    
+    # Return PDF as bytes
+    return pdf.output()
+
 
 # ============================================================================
 # PAGE CONFIG
@@ -913,6 +1007,25 @@ def main():
     st.sidebar.markdown("**🎨 Theme**")
     theme = st.sidebar.radio("Mode", ["Light", "Dark"], index=0, horizontal=True, label_visibility="collapsed")
     
+    # PDF Download button - only show if we have recommendations in session state
+    if 'recommendations' in st.session_state and st.session_state['recommendations'] is not None:
+        rec_data = st.session_state['recommendations']
+        pdf_bytes = generate_trade_plan_pdf(
+            week_type=rec_data['week_type'],
+            target_monday=rec_data['target_monday'],
+            target_friday=rec_data['target_friday'],
+            symbol=rec_data['symbol'],
+            strategy=rec_data['strategy'],
+            recommendations_df=rec_data['df']
+        )
+        filename = f"TTA_TradePlan_{rec_data['symbol']}_{rec_data['target_monday']:%Y%m%d}.pdf"
+        st.sidebar.download_button(
+            label="📄 Save Trade Plan (PDF)",
+            data=pdf_bytes,
+            file_name=filename,
+            mime="application/pdf"
+        )
+    
     st.sidebar.markdown("---")
     
     # Apply theme CSS
@@ -1245,6 +1358,7 @@ def main():
         
         if recommendations.empty:
             st.warning("No slots meet the criteria for weekly potentials.")
+            st.session_state['recommendations'] = None
         else:
             # Calculate target week dates
             max_date = filtered_df['Date'].max().date()
@@ -1258,6 +1372,16 @@ def main():
                 # Next week
                 target_monday = current_week_start + timedelta(weeks=1)
                 target_friday = target_monday + timedelta(days=4)
+            
+            # Store recommendations for PDF export
+            st.session_state['recommendations'] = {
+                'week_type': week_selection,
+                'target_monday': target_monday,
+                'target_friday': target_friday,
+                'symbol': selected_symbol,
+                'strategy': selected_name,
+                'df': recommendations.copy()
+            }
             
             st.info(f"**Trading Week:** {target_monday:%B %d, %Y} - {target_friday:%B %d, %Y}")
             st.write(f"**Symbol:** {selected_symbol} | **Strategy:** {selected_name}")

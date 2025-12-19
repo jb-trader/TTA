@@ -5,3 +5,4 @@ plotly
 requests
 pyarrow
 pytz
+fpdf2
