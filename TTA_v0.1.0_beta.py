@@ -11,13 +11,14 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, time
 from calendar import monthrange
 from pathlib import Path
 import warnings
 import requests
 from io import BytesIO
 import re
+import pytz
 
 # Import config for Google Drive URL and exclusion dates
 import config as cfg
@@ -265,10 +266,30 @@ def _download_drive_bytes() -> bytes:
     return r.content
 
 
-@st.cache_data(ttl=7200)
-def load_data(data_version: str):
+def get_cache_key():
+    """
+    Generate a cache key that changes at 4:30 PM ET each trading day.
+    This causes automatic data refresh after market data is updated.
+    """
+    et = pytz.timezone('US/Eastern')
+    now = datetime.now(et)
+    today = now.date()
+    refresh_time = time(16, 30)  # 4:30 PM ET
+    
+    # If it's after 4:30 PM, use today's date as key
+    # If it's before 4:30 PM, use yesterday's date as key
+    if now.time() >= refresh_time:
+        cache_date = today
+    else:
+        cache_date = today - timedelta(days=1)
+    
+    return f"{cache_date}"
+
+
+@st.cache_data(ttl=3600)  # 1 hour cache as backup
+def load_data(cache_key: str):
     """Load data from Google Drive with local fallback."""
-    _ = data_version
+    _ = cache_key  # Used for cache invalidation
     local_path = Path(r"D:/_Documents/Magic 8 Ball/data/dfe_table.parquet")
     
     df = pd.DataFrame()
@@ -886,18 +907,24 @@ def main():
 </div>
         """, unsafe_allow_html=True)
     
-    # Load data
-    data_version = getattr(cfg, "get_data_version", lambda: "NA")()
+    # Load data (cache key changes at 4:30 PM ET for auto-refresh)
+    cache_key = get_cache_key()
     with st.spinner("Loading data from Google Drive..."):
-        df, source = load_data(data_version)
+        df, source = load_data(cache_key)
     
     if df.empty:
         st.error("No data available. Please check your data source.")
         return
     
-    # Show latest date in sidebar
+    # Show latest date and refresh button in sidebar
     if pd.notna(df['Date'].max()):
-        st.sidebar.caption(f"Latest date: {df['Date'].max():%m/%d/%Y}")
+        date_col, refresh_col = st.sidebar.columns([2, 1])
+        with date_col:
+            st.caption(f"Latest date: {df['Date'].max():%m/%d/%Y}")
+        with refresh_col:
+            if st.button("🔄", help="Refresh data from source"):
+                st.cache_data.clear()
+                st.rerun()
     
     # ========================================================================
     # SIDEBAR FILTERS
