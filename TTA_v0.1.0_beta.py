@@ -522,9 +522,9 @@ def run_walk_forward_analysis(df, progress_bar=None, max_lookback=20):
         st.error(f"Not enough data. Need at least 3 weeks, have {num_weeks}.")
         return None, None
     
-    # Test lookback periods from 2 to min(max_lookback, num_weeks - 1)
+    # Test lookback periods from 2 to min(max_lookback, num_weeks - 1), step by 2
     effective_max = min(max_lookback, num_weeks - 1)
-    lookback_range = list(range(2, effective_max + 1))
+    lookback_range = list(range(2, effective_max + 1, 2))  # [2, 4, 6, 8, 10, ...]
     
     weeks_list = list(weeks)
     
@@ -994,14 +994,14 @@ def main():
     # Max Lookback slider
     max_lookback = st.sidebar.slider(
         "Max Lookback (weeks)",
-        min_value=5,
+        min_value=4,
         max_value=52,
         value=20,
-        step=1,
+        step=2,
         help="Limit the maximum lookback period to test. Lower = faster analysis. "
              "20 weeks is usually sufficient to find optimal lookbacks."
     )
-    st.sidebar.caption(f"*Testing lookbacks from 2 to {max_lookback} weeks*")
+    st.sidebar.caption(f"*Testing lookbacks: 2, 4, 6... up to {max_lookback} weeks*")
     
     st.sidebar.markdown("---")
     st.sidebar.subheader("📊 Data Summary")
@@ -1013,7 +1013,9 @@ def main():
     st.sidebar.write(f"**Date Range:** {filtered_df['Date'].min():%Y-%m-%d} to {filtered_df['Date'].max():%Y-%m-%d}")
     st.sidebar.write(f"**Weeks Available:** {weeks_available}")
     effective_max = min(max_lookback, weeks_available - 1)
-    st.sidebar.write(f"**Lookback Range:** 2 to {effective_max} weeks")
+    # Actual max is the largest even number <= effective_max
+    actual_max = effective_max if effective_max % 2 == 0 else effective_max - 1
+    st.sidebar.write(f"**Lookback Range:** 2, 4, 6... {actual_max} weeks")
     st.sidebar.write(f"**Min WF Trades:** >20 (walk-forward test period)")
     
     # ========================================================================
