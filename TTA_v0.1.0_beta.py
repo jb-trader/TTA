@@ -226,6 +226,16 @@ def get_theme_css(theme):
             font-weight: bold !important;
             color: #000000 !important;
         }}
+        
+        /* Disclaimer - must be last to override theme colors */
+        .disclaimer-box, 
+        .disclaimer-box *, 
+        div.disclaimer-box, 
+        div.disclaimer-box span, 
+        div.disclaimer-box strong {{
+            color: #cc0000 !important;
+            background-color: yellow !important;
+        }}
     </style>
     """
 
@@ -1469,10 +1479,11 @@ This is as close to "real" performance as you can get without live trading.
         
         with col4:
             st.markdown(
-                "<p style='font-size: 12px; color: red; background-color: yellow; margin-top: 0px; padding: 6px;'>"
-                "<strong>Disclaimer:</strong> Educational use only – not financial advice. Past performance ≠ future results. "
-                "Do not trade with money you cannot afford to lose."
-                "</p>",
+                "<div class='disclaimer-box' style='font-size: 12px; color: #cc0000 !important; background-color: yellow; margin-top: 0px; padding: 6px;'>"
+                "<strong style='color: #cc0000 !important;'>Disclaimer:</strong> "
+                "<span style='color: #cc0000 !important;'>Educational use only – not financial advice. Past performance ≠ future results. "
+                "Do not trade with money you cannot afford to lose.</span>"
+                "</div>",
                 unsafe_allow_html=True
             )
         
