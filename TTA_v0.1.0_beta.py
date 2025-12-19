@@ -115,8 +115,8 @@ def generate_trade_plan_pdf(week_type, target_monday, target_friday, symbol, str
     pdf.cell(0, 6, f"Generated: {datetime.now():%Y-%m-%d %H:%M}", ln=True, align='C')
     pdf.cell(0, 6, "TTA - Time Trends Auto by jb-trader", ln=True, align='C')
     
-    # Return PDF as bytes
-    return pdf.output()
+    # Return PDF as bytes (convert bytearray to bytes for Streamlit)
+    return bytes(pdf.output())
 
 
 # ============================================================================
