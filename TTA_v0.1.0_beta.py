@@ -937,12 +937,29 @@ def main():
     
     # Butterfly Strike Liquidity filter - only show for Butterfly strategies
     exclude_illiquid_strikes = False
+    predict_distance_enabled = False
+    predict_distance_value = 18
     if 'Butterfly' in selected_name:
         exclude_illiquid_strikes = st.sidebar.checkbox(
             "Exclude Illiquid Strikes (25/40/65/80)", 
             value=True,
             help="Exclude butterfly trades where center strike ends in 25, 40, 65, or 80"
         )
+        predict_distance_enabled = st.sidebar.checkbox(
+            "Predict Distance Filter",
+            value=False,
+            help="Exclude trades where |Center - Predicted| > threshold"
+        )
+        if predict_distance_enabled:
+            predict_distance_value = st.sidebar.number_input(
+                "Distance Threshold",
+                min_value=1,
+                max_value=100,
+                value=18,
+                step=1,
+                help="Include trades where |Center - Predicted| ≤ this value"
+            )
+            st.sidebar.caption(f"🔍 Active: |Center-Predicted| ≤ {predict_distance_value}")
     
     # Institutional Rebalancing Filter (matching TTV)
     st.sidebar.markdown("**Institutional Rebalancing Filter**")
@@ -977,6 +994,16 @@ def main():
     if exclude_illiquid_strikes and 'center_strike' in filtered_df.columns:
         illiquid_endings = {25, 40, 65, 80}
         filtered_df = filtered_df[~(filtered_df['center_strike'] % 100).isin(illiquid_endings)]
+    
+    # Apply Predict Distance filter (Butterfly only)
+    if predict_distance_enabled and 'Center' in filtered_df.columns and 'Predicted' in filtered_df.columns:
+        mask_has_center = filtered_df['Center'].notna()
+        if mask_has_center.any():
+            distance = abs(filtered_df.loc[mask_has_center, 'Center'] - filtered_df.loc[mask_has_center, 'Predicted'])
+            valid_distance = distance <= predict_distance_value
+            # Keep all non-butterfly trades and butterfly trades within distance
+            keep_mask = ~mask_has_center | (mask_has_center & valid_distance)
+            filtered_df = filtered_df[keep_mask]
     
     st.sidebar.markdown("---")
     st.sidebar.subheader("📈 Quality Filter")
@@ -1038,6 +1065,8 @@ def main():
         'exclude_earnings_e': exclude_earnings_e,
         'exclude_earnings_e1': exclude_earnings_e1,
         'exclude_illiquid_strikes': exclude_illiquid_strikes,
+        'predict_distance_enabled': predict_distance_enabled,
+        'predict_distance_value': predict_distance_value,
         'min_r_squared': min_r_squared,
         'max_lookback': max_lookback
     }
