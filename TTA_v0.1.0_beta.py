@@ -501,9 +501,9 @@ def precompute_weekly_stats(df):
     return weekly_stats
 
 
-def run_walk_forward_analysis(df, progress_bar=None):
+def run_walk_forward_analysis(df, progress_bar=None, max_lookback=20):
     """
-    Run walk-forward analysis for each day of week across ALL possible lookback periods.
+    Run walk-forward analysis for each day of week across lookback periods.
     
     For each day and each lookback:
     1. Look back N weeks, find the SINGLE Entry_Time with highest avg profit
@@ -522,8 +522,9 @@ def run_walk_forward_analysis(df, progress_bar=None):
         st.error(f"Not enough data. Need at least 3 weeks, have {num_weeks}.")
         return None, None
     
-    # Test lookback periods from 2 to (num_weeks - 1)
-    lookback_range = list(range(2, num_weeks))
+    # Test lookback periods from 2 to min(max_lookback, num_weeks - 1)
+    effective_max = min(max_lookback, num_weeks - 1)
+    lookback_range = list(range(2, effective_max + 1))
     
     weeks_list = list(weeks)
     
@@ -842,7 +843,7 @@ def main():
 - **Automatic Optimization** - Finds the optimal lookback period (2 to N weeks) for each day of the week
 - **Walk-Forward Testing** - Shows actual out-of-sample performance, not just backtested results
 - **R² Quality Filter** - Optional filter to only consider lookbacks with consistent equity curves
-- **Weekly Potentials** - Outputs one potential entry time per day based on optimal lookback
+- **Weekly Potential Trades** - Outputs one potential entry time per day based on optimal lookback
 - **One-Click Analysis** - Just select Symbol/Strategy and run
 
 **How TTA Differs from TTD and TTV:**
@@ -968,8 +969,39 @@ def main():
              "Only lookback periods meeting this threshold will be considered."
     )
     
+    # R² qualitative description
+    if min_r_squared >= 0.9:
+        r2_desc = "Excellent"
+    elif min_r_squared >= 0.8:
+        r2_desc = "Strong"
+    elif min_r_squared >= 0.7:
+        r2_desc = "Good"
+    elif min_r_squared >= 0.5:
+        r2_desc = "Moderate"
+    elif min_r_squared > 0:
+        r2_desc = "Weak"
+    else:
+        r2_desc = "No filter"
+    
     if min_r_squared > 0:
-        st.sidebar.caption(f"*Only considering lookbacks with R² ≥ {min_r_squared}*")
+        st.sidebar.caption(f"*Only considering lookbacks with R² ≥ {min_r_squared} ({r2_desc})*")
+    else:
+        st.sidebar.caption(f"*{r2_desc} - all lookbacks included*")
+    
+    st.sidebar.markdown("---")
+    st.sidebar.subheader("⚡ Performance")
+    
+    # Max Lookback slider
+    max_lookback = st.sidebar.slider(
+        "Max Lookback (weeks)",
+        min_value=5,
+        max_value=52,
+        value=20,
+        step=1,
+        help="Limit the maximum lookback period to test. Lower = faster analysis. "
+             "20 weeks is usually sufficient to find optimal lookbacks."
+    )
+    st.sidebar.caption(f"*Testing lookbacks from 2 to {max_lookback} weeks*")
     
     st.sidebar.markdown("---")
     st.sidebar.subheader("📊 Data Summary")
@@ -980,7 +1012,8 @@ def main():
     st.sidebar.write(f"**Trades:** {len(filtered_df):,}")
     st.sidebar.write(f"**Date Range:** {filtered_df['Date'].min():%Y-%m-%d} to {filtered_df['Date'].max():%Y-%m-%d}")
     st.sidebar.write(f"**Weeks Available:** {weeks_available}")
-    st.sidebar.write(f"**Lookback Range:** 2 to {weeks_available - 1} weeks (auto)")
+    effective_max = min(max_lookback, weeks_available - 1)
+    st.sidebar.write(f"**Lookback Range:** 2 to {effective_max} weeks")
     st.sidebar.write(f"**Min WF Trades:** >20 (walk-forward test period)")
     
     # ========================================================================
@@ -999,7 +1032,8 @@ def main():
         'exclude_earnings_e': exclude_earnings_e,
         'exclude_earnings_e1': exclude_earnings_e1,
         'exclude_illiquid_strikes': exclude_illiquid_strikes,
-        'min_r_squared': min_r_squared
+        'min_r_squared': min_r_squared,
+        'max_lookback': max_lookback
     }
     
     run_button = st.sidebar.button("🚀 Run Walk-Forward Analysis", type="primary", use_container_width=True)
@@ -1023,7 +1057,8 @@ def main():
         
         result = run_walk_forward_analysis(
             filtered_df, 
-            progress_bar=progress_bar
+            progress_bar=progress_bar,
+            max_lookback=max_lookback
         )
         
         # Clear the status message and progress bar
@@ -1047,6 +1082,7 @@ def main():
         st.session_state['selected_symbol'] = selected_symbol
         st.session_state['selected_name'] = selected_name
         st.session_state['min_r_squared'] = min_r_squared
+        st.session_state['max_lookback'] = max_lookback
         # Store filter settings used in this run
         st.session_state['last_run_filters'] = current_filters
     
@@ -1072,7 +1108,7 @@ def main():
         # WEEKLY POTENTIALS
         # ====================================================================
         st.markdown("---")
-        st.subheader("🎱 Weekly Potential (Best Entry Time per Day)")
+        st.subheader("🎱 Weekly Potential Trades (Best Entry Time per Day)")
         
         # Week selection toggle
         week_selection = st.radio(
@@ -1409,9 +1445,9 @@ This is as close to "real" performance as you can get without live trading.
                 potentials_df.columns = ['Day', 'Entry_Time']
                 csv_potentials = potentials_df.to_csv(index=False)
                 st.download_button(
-                    label="📥 Potentials",
+                    label="📥 Potential Trades",
                     data=csv_potentials,
-                    file_name=f"WF_Potentials_{selected_symbol}_{selected_name}_{datetime.now():%Y%m%d}.csv",
+                    file_name=f"WF_PotentialTrades_{selected_symbol}_{selected_name}_{datetime.now():%Y%m%d}.csv",
                     mime="text/csv"
                 )
         
@@ -1456,7 +1492,7 @@ ALL day × lookback combos:
             
             with desc_col3:
                 st.markdown("""
-**📥 Potentials**
+**📥 Potential Trades**
 
 Simple 2-column actionable output:
 - `Day` - Monday-Friday
