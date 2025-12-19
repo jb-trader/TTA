@@ -31,7 +31,7 @@ st.set_page_config(
     page_title="Time Trends Auto (TTA v0.1.1 beta) by jb-trader",
     page_icon="🎱",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="auto"
 )
 
 VERSION = "1.0"
@@ -56,12 +56,35 @@ st.markdown("""
         }
     }
     
+    /* Mobile - ensure sidebar is accessible */
+    @media (max-width: 767px) {
+        section[data-testid="stSidebar"] {
+            background-color: #f0f2f6 !important;
+            z-index: 999 !important;
+        }
+        section[data-testid="stSidebar"] > div {
+            background-color: #f0f2f6 !important;
+        }
+        /* Ensure sidebar toggle button is visible */
+        button[data-testid="stSidebarNavToggle"],
+        button[data-testid="baseButton-headerNoPadding"],
+        [data-testid="collapsedControl"] {
+            display: block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+        }
+    }
+    
     .main .block-container {
         padding-top: 1rem !important;
         max-width: 100% !important;
     }
-    header[data-testid="stHeader"] {
-        display: none !important;
+    
+    /* Hide header/footer on desktop only - mobile needs header for sidebar toggle */
+    @media (min-width: 768px) {
+        header[data-testid="stHeader"] {
+            display: none !important;
+        }
     }
     footer {
         display: none !important;
