@@ -996,12 +996,32 @@ def main():
         "Max Lookback (weeks)",
         min_value=4,
         max_value=52,
-        value=20,
+        value=40,
         step=2,
-        help="Limit the maximum lookback period to test. Lower = faster analysis. "
-             "20 weeks is usually sufficient to find optimal lookbacks."
+        help="Limit the maximum lookback period to test. Lower = faster analysis."
     )
     st.sidebar.caption(f"*Testing lookbacks: 2, 4, 6... up to {max_lookback} weeks*")
+    
+    # Define current filters for comparison (needed before button)
+    current_filters = {
+        'selected_symbol': selected_symbol,
+        'selected_name': selected_name,
+        'rebal_month_end': rebal_month_end,
+        'rebal_t1': rebal_t1,
+        'rebal_t2': rebal_t2,
+        'rebal_qtr_only': rebal_qtr_only,
+        'exclude_fomc': exclude_fomc,
+        'exclude_earnings_e': exclude_earnings_e,
+        'exclude_earnings_e1': exclude_earnings_e1,
+        'exclude_illiquid_strikes': exclude_illiquid_strikes,
+        'min_r_squared': min_r_squared,
+        'max_lookback': max_lookback
+    }
+    
+    st.sidebar.markdown("---")
+    run_button = st.sidebar.button("🚀 Run Walk-Forward Analysis", type="primary", use_container_width=True)
+    auto_run = st.sidebar.checkbox("Auto-run on filter change", value=False, 
+                                    help="Automatically re-run analysis when filters change")
     
     st.sidebar.markdown("---")
     st.sidebar.subheader("📊 Data Summary")
@@ -1021,26 +1041,6 @@ def main():
     # ========================================================================
     # RUN ANALYSIS
     # ========================================================================
-    
-    # Define current filters for comparison
-    current_filters = {
-        'selected_symbol': selected_symbol,
-        'selected_name': selected_name,
-        'rebal_month_end': rebal_month_end,
-        'rebal_t1': rebal_t1,
-        'rebal_t2': rebal_t2,
-        'rebal_qtr_only': rebal_qtr_only,
-        'exclude_fomc': exclude_fomc,
-        'exclude_earnings_e': exclude_earnings_e,
-        'exclude_earnings_e1': exclude_earnings_e1,
-        'exclude_illiquid_strikes': exclude_illiquid_strikes,
-        'min_r_squared': min_r_squared,
-        'max_lookback': max_lookback
-    }
-    
-    run_button = st.sidebar.button("🚀 Run Walk-Forward Analysis", type="primary", use_container_width=True)
-    auto_run = st.sidebar.checkbox("Auto-run on filter change", value=False, 
-                                    help="Automatically re-run analysis when filters change")
     
     # Check if we should auto-run (filters changed and auto-run enabled)
     filters_changed = False
