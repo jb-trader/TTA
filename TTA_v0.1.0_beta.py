@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """
-Time Trends Auto (TTA v0.1.2 beta) by jb-trader
+Time Trends Auto (TTA v0.1.0 beta) by jb-trader
 Finds optimal lookback period (in weeks) for Entry_Time × Day_of_week profit optimization.
 Conducts walk-forward analysis to validate lookback selection.
 
-Version 0.1.2 beta
+Version 0.1.0 beta
 """
 
 import streamlit as st
@@ -29,7 +29,7 @@ warnings.filterwarnings('ignore')
 # PAGE CONFIG
 # ============================================================================
 st.set_page_config(
-    page_title="Time Trends Auto (TTA v0.1.2 beta) by jb-trader",
+    page_title="Time Trends Auto (TTA v0.1.0 beta) by jb-trader",
     page_icon="🎱",
     layout="wide",
     initial_sidebar_state="auto"
@@ -38,7 +38,7 @@ st.set_page_config(
 VERSION = "1.0"
 
 # Theme CSS function
-def get_theme_css(theme, wide_mode=True):
+def get_theme_css(theme):
     """Return CSS based on selected theme."""
     if theme == "Light":
         bg_color = "#ffffff"
@@ -56,9 +56,6 @@ def get_theme_css(theme, wide_mode=True):
         table_header_bg = "#262730"
         border_color = "#444"
         collapse_btn_color = "#4da6ff"  # Lighter blue - visible on dark
-    
-    # Wide mode: no max-width. Normal: constrained width
-    max_width_css = "max-width: 100% !important;" if wide_mode else "max-width: 1200px !important; margin: 0 auto !important;"
     
     return f"""
     <style>
@@ -134,7 +131,7 @@ def get_theme_css(theme, wide_mode=True):
         
         .main .block-container {{
             padding-top: 1rem !important;
-            {max_width_css}
+            max-width: 100% !important;
         }}
         
         /* Hide footer */
@@ -911,22 +908,17 @@ def get_week_recommendations(df, optimal_by_day, week_offset=1):
 
 def main():
     # ========================================================================
-    # THEME SECTION (consolidated display settings)
+    # THEME SECTION
     # ========================================================================
     st.sidebar.markdown("**🎨 Theme**")
     theme = st.sidebar.radio("Mode", ["Light", "Dark"], index=0, horizontal=True, label_visibility="collapsed")
-    wide_mode = st.sidebar.checkbox("Wide Mode", value=True)
-    
-    # Print button - triggers browser print dialog
-    if st.sidebar.button("🖨️ Print / Save PDF"):
-        st.components.v1.html("<script>window.print();</script>", height=0)
     
     st.sidebar.markdown("---")
     
-    # Apply theme CSS (with wide_mode setting)
-    st.markdown(get_theme_css(theme, wide_mode), unsafe_allow_html=True)
+    # Apply theme CSS
+    st.markdown(get_theme_css(theme), unsafe_allow_html=True)
     
-    st.markdown("# 🎱 Time Trends Auto (TTA v0.1.2 beta) <span style='font-size: 18px; font-style: italic; color: blue;'>by jb-trader</span>", unsafe_allow_html=True)
+    st.markdown("# 🎱 Time Trends Auto (TTA v0.1.0 beta) <span style='font-size: 18px; font-style: italic; color: blue;'>by jb-trader</span>", unsafe_allow_html=True)
     st.markdown("*TTA uses walk-forward analysis to automatically find the optimal lookback period for each day of the week, then presents the best entry time per day based on historical average profit.*")
     
     with st.expander("ℹ️ About TTA - Key Features & How It Differs from TTD & TTV  👇 CLICK HERE"):
