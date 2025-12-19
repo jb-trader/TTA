@@ -36,241 +36,186 @@ st.set_page_config(
 
 VERSION = "1.0"
 
-# Custom CSS - Laptop-friendly font sizes + Light theme (mobile-friendly)
-st.markdown("""
-<style>
-    /* Force light background for dark mode users */
-    .stApp {
-        background-color: #ffffff !important;
-    }
-    .stApp [data-testid="stAppViewContainer"] {
-        background-color: #ffffff !important;
-    }
+# Theme CSS function
+def get_theme_css(theme):
+    """Return CSS based on selected theme."""
+    if theme == "Light":
+        bg_color = "#ffffff"
+        sidebar_bg = "#f0f2f6"
+        text_color = "#000000"
+        table_header_bg = "#f5f5f5"
+        border_color = "#ddd"
+    else:  # Dark
+        bg_color = "#0e1117"
+        sidebar_bg = "#262730"
+        text_color = "#fafafa"
+        table_header_bg = "#262730"
+        border_color = "#444"
     
-    /* Force black text for labels and text elements (dark mode fix) */
-    .stApp label {
-        color: black !important;
-    }
-    .stApp [data-testid="stMarkdownContainer"] {
-        color: black !important;
-    }
-    .stApp [data-testid="stMarkdownContainer"] p,
-    .stApp [data-testid="stMarkdownContainer"] span {
-        color: black !important;
-    }
-    
-    /* Force sidebar light background for dark mode users */
-    section[data-testid="stSidebar"] {
-        background-color: #f0f2f6 !important;
-    }
-    section[data-testid="stSidebar"] > div {
-        background-color: #f0f2f6 !important;
-    }
-    section[data-testid="stSidebar"] [data-testid="stSidebarContent"] {
-        background-color: #f0f2f6 !important;
-    }
-    
-    /* Sidebar - desktop only width constraint */
-    @media (min-width: 768px) {
-        section[data-testid="stSidebar"] {
-            width: 300px !important;
-            min-width: 300px !important;
-            background-color: #f0f2f6 !important;
-        }
-    }
-    
-    /* Mobile - ensure sidebar is accessible */
-    @media (max-width: 767px) {
-        section[data-testid="stSidebar"] {
-            background-color: #f0f2f6 !important;
-            z-index: 999 !important;
-        }
-        section[data-testid="stSidebar"] > div {
-            background-color: #f0f2f6 !important;
-        }
-        /* Ensure sidebar toggle button is visible */
-        button[data-testid="stSidebarNavToggle"],
-        button[data-testid="baseButton-headerNoPadding"],
-        [data-testid="collapsedControl"] {
-            display: block !important;
-            visibility: visible !important;
-            opacity: 1 !important;
-        }
-    }
-    
-    .main .block-container {
-        padding-top: 1rem !important;
-        max-width: 100% !important;
-    }
-    
-    /* Hide header/footer on desktop only - mobile needs header for sidebar toggle */
-    @media (min-width: 768px) {
-        header[data-testid="stHeader"] {
+    return f"""
+    <style>
+        /* Theme colors */
+        .stApp {{
+            background-color: {bg_color} !important;
+        }}
+        .stApp [data-testid="stAppViewContainer"] {{
+            background-color: {bg_color} !important;
+        }}
+        section[data-testid="stSidebar"] {{
+            background-color: {sidebar_bg} !important;
+        }}
+        section[data-testid="stSidebar"] > div {{
+            background-color: {sidebar_bg} !important;
+        }}
+        
+        /* Text colors */
+        .stApp, .stApp p, .stApp span, .stApp label, .stApp h1, .stApp h2, .stApp h3 {{
+            color: {text_color} !important;
+        }}
+        section[data-testid="stSidebar"], 
+        section[data-testid="stSidebar"] p, 
+        section[data-testid="stSidebar"] span, 
+        section[data-testid="stSidebar"] label,
+        section[data-testid="stSidebar"] h2,
+        section[data-testid="stSidebar"] h3 {{
+            color: {text_color} !important;
+        }}
+        .stMarkdown, .stMarkdown p {{
+            color: {text_color} !important;
+        }}
+        
+        /* Sidebar width - desktop only */
+        @media (min-width: 768px) {{
+            section[data-testid="stSidebar"] {{
+                width: 300px !important;
+                min-width: 300px !important;
+            }}
+        }}
+        
+        .main .block-container {{
+            padding-top: 1rem !important;
+            max-width: 100% !important;
+        }}
+        
+        /* Hide footer */
+        footer {{
             display: none !important;
-        }
-    }
-    footer {
-        display: none !important;
-    }
-    
-    /* Dataframe font size */
-    .stDataFrame {
-        font-size: 14px !important;
-    }
-    .stDataFrame table {
-        font-size: 14px !important;
-    }
-    .stDataFrame th {
-        font-size: 14px !important;
-        font-weight: bold !important;
-        color: black !important;
-    }
-    .stDataFrame td {
-        font-size: 14px !important;
-        font-weight: bold !important;
-        color: black !important;
-    }
-    
-    /* General text size */
-    .stMarkdown {
-        font-size: 15px !important;
-        font-weight: normal !important;
-        color: black !important;
-    }
-    .stMarkdown p {
-        font-size: 15px !important;
-        font-weight: normal !important;
-        color: black !important;
-    }
-    
-    /* Subheader size */
-    h2 {
-        font-size: 24px !important;
-        color: black !important;
-    }
-    h3 {
-        font-size: 20px !important;
-        color: black !important;
-    }
-    
-    /* Metric font sizes */
-    [data-testid="stMetricValue"] {
-        font-size: 28px !important;
-        font-weight: bold !important;
-        color: black !important;
-    }
-    [data-testid="stMetricLabel"] {
-        font-size: 14px !important;
-        font-weight: bold !important;
-        color: black !important;
-    }
-    
-    /* Info box text */
-    .stAlert {
-        font-size: 14px !important;
-        font-weight: normal !important;
-        color: black !important;
-    }
-    .stAlert p {
-        font-size: 14px !important;
-        font-weight: normal !important;
-        color: black !important;
-    }
-    
-    /* Selectbox, input, and radio labels */
-    .stSelectbox label, .stNumberInput label {
-        font-size: 14px !important;
-        color: black !important;
-    }
-    .stRadio label {
-        color: black !important;
-    }
-    .stRadio div[role="radiogroup"] label {
-        color: black !important;
-    }
-    .stRadio div[role="radiogroup"] label span {
-        color: black !important;
-    }
-    
-    /* Success box */
-    .stSuccess {
-        font-size: 14px !important;
-        font-weight: normal !important;
-        color: black !important;
-    }
-    
-    /* Sidebar text */
-    section[data-testid="stSidebar"] .stMarkdown {
-        font-size: 14px !important;
-        font-weight: normal !important;
-        color: black !important;
-    }
-    section[data-testid="stSidebar"] .stMarkdown p {
-        font-size: 14px !important;
-        font-weight: normal !important;
-        color: black !important;
-    }
-    section[data-testid="stSidebar"] h2 {
-        font-size: 18px !important;
-        color: black !important;
-    }
-    section[data-testid="stSidebar"] h3 {
-        font-size: 16px !important;
-        color: black !important;
-    }
-    section[data-testid="stSidebar"] .stAlert {
-        font-size: 13px !important;
-        font-weight: normal !important;
-    }
-    section[data-testid="stSidebar"] .stAlert p {
-        font-size: 13px !important;
-        font-weight: normal !important;
-    }
-    section[data-testid="stSidebar"] label {
-        font-size: 13px !important;
-        color: black !important;
-    }
-    section[data-testid="stSidebar"] .stCheckbox label span {
-        font-size: 13px !important;
-        color: black !important;
-    }
-    section[data-testid="stSidebar"] .stSelectbox label,
-    section[data-testid="stSidebar"] .stSlider label,
-    section[data-testid="stSidebar"] .stRadio label {
-        color: black !important;
-    }
-    section[data-testid="stSidebar"] p,
-    section[data-testid="stSidebar"] span {
-        color: black !important;
-    }
-    
-    /* Expanders in light green */
-    .streamlit-expanderHeader {
-        background-color: #90EE90 !important;
-        border-radius: 8px !important;
-        padding: 8px 12px !important;
-        font-size: 16px !important;
-        font-weight: bold !important;
-    }
-    div[data-testid="stExpander"] > details > summary {
-        background-color: #90EE90 !important;
-        border-radius: 8px !important;
-        padding: 8px 12px !important;
-        font-size: 16px !important;
-        font-weight: bold !important;
-    }
-    /* Text inside expander header */
-    div[data-testid="stExpander"] > details > summary span,
-    div[data-testid="stExpander"] > details > summary p,
-    div[data-testid="stExpander"] > details > summary div,
-    div[data-testid="stExpander"] summary span[data-testid="stMarkdownContainer"],
-    div[data-testid="stExpander"] summary span[data-testid="stMarkdownContainer"] p {
-        font-size: 16px !important;
-        font-weight: bold !important;
-        color: #1a1a1a !important;
-    }
-</style>
-""", unsafe_allow_html=True)
+        }}
+        
+        /* Dataframe font size */
+        .stDataFrame {{
+            font-size: 14px !important;
+        }}
+        .stDataFrame table {{
+            font-size: 14px !important;
+        }}
+        .stDataFrame th {{
+            font-size: 14px !important;
+            font-weight: bold !important;
+            color: {text_color} !important;
+        }}
+        .stDataFrame td {{
+            font-size: 14px !important;
+            font-weight: bold !important;
+            color: {text_color} !important;
+        }}
+        
+        /* General text size */
+        .stMarkdown {{
+            font-size: 15px !important;
+            font-weight: normal !important;
+        }}
+        .stMarkdown p {{
+            font-size: 15px !important;
+            font-weight: normal !important;
+        }}
+        
+        /* Subheader size */
+        h2 {{
+            font-size: 24px !important;
+        }}
+        h3 {{
+            font-size: 20px !important;
+        }}
+        
+        /* Metric font sizes */
+        [data-testid="stMetricValue"] {{
+            font-size: 28px !important;
+            font-weight: bold !important;
+            color: {text_color} !important;
+        }}
+        [data-testid="stMetricLabel"] {{
+            font-size: 14px !important;
+            font-weight: bold !important;
+            color: {text_color} !important;
+        }}
+        
+        /* Info box text */
+        .stAlert {{
+            font-size: 14px !important;
+            font-weight: normal !important;
+        }}
+        .stAlert p {{
+            font-size: 14px !important;
+            font-weight: normal !important;
+        }}
+        
+        /* Selectbox and input labels */
+        .stSelectbox label, .stNumberInput label {{
+            font-size: 14px !important;
+        }}
+        
+        /* Sidebar text sizes */
+        section[data-testid="stSidebar"] .stMarkdown {{
+            font-size: 14px !important;
+            font-weight: normal !important;
+        }}
+        section[data-testid="stSidebar"] .stMarkdown p {{
+            font-size: 14px !important;
+            font-weight: normal !important;
+        }}
+        section[data-testid="stSidebar"] h2 {{
+            font-size: 18px !important;
+        }}
+        section[data-testid="stSidebar"] h3 {{
+            font-size: 16px !important;
+        }}
+        section[data-testid="stSidebar"] .stAlert {{
+            font-size: 13px !important;
+            font-weight: normal !important;
+        }}
+        section[data-testid="stSidebar"] .stAlert p {{
+            font-size: 13px !important;
+            font-weight: normal !important;
+        }}
+        section[data-testid="stSidebar"] label {{
+            font-size: 13px !important;
+        }}
+        section[data-testid="stSidebar"] .stCheckbox label span {{
+            font-size: 13px !important;
+        }}
+        
+        /* Expanders in light green */
+        .streamlit-expanderHeader {{
+            background-color: #90EE90 !important;
+            border-radius: 8px !important;
+            padding: 8px 12px !important;
+            font-size: 16px !important;
+            font-weight: bold !important;
+            color: #000000 !important;
+        }}
+        div[data-testid="stExpander"] > details > summary {{
+            background-color: #90EE90 !important;
+            border-radius: 8px !important;
+            padding: 8px 12px !important;
+            font-size: 16px !important;
+            font-weight: bold !important;
+            color: #000000 !important;
+        }}
+    </style>
+    """
+
+VERSION = "1.0"
 
 # ============================================================================
 # CONSTANTS
@@ -880,6 +825,12 @@ def get_week_recommendations(df, optimal_by_day, week_offset=1):
 # ============================================================================
 
 def main():
+    # Theme toggle at the very top
+    theme = st.sidebar.radio("🎨 Theme", ["Light", "Dark"], index=0, horizontal=True)
+    
+    # Apply theme CSS
+    st.markdown(get_theme_css(theme), unsafe_allow_html=True)
+    
     st.markdown("# 🎱 Time Trends Auto (TTA v0.1.1 beta) <span style='font-size: 18px; font-style: italic; color: blue;'>by jb-trader</span>", unsafe_allow_html=True)
     st.markdown("*TTA uses walk-forward analysis to automatically find the optimal lookback period for each day of the week, then presents the best entry time per day based on historical average profit.*")
     
@@ -1165,11 +1116,18 @@ def main():
             display_recs = display_recs[['Day_of_week', 'Entry_Time', 'avg_profit', 'win_rate', 'trade_count', 'optimal_lookback']]
             display_recs.columns = ['Day', 'Entry Time', 'Avg Profit', 'Win Rate', 'Trades', 'Lookback']
             
-            # Generate HTML table
+            # Generate HTML table with theme-aware colors
+            if theme == "Light":
+                th_style = 'font-size: 14px; font-weight: bold; color: black; padding: 8px; border: 1px solid #ddd; background-color: #f5f5f5; text-align: center;'
+                td_style = 'font-size: 14px; font-weight: bold; color: black; padding: 8px; border: 1px solid #ddd; text-align: center;'
+            else:
+                th_style = 'font-size: 14px; font-weight: bold; color: #fafafa; padding: 8px; border: 1px solid #444; background-color: #262730; text-align: center;'
+                td_style = 'font-size: 14px; font-weight: bold; color: #fafafa; padding: 8px; border: 1px solid #444; text-align: center;'
+            
             html_recs = display_recs.to_html(index=False, escape=False)
             html_recs = html_recs.replace('<table', '<table style="width:100%; border-collapse: collapse;"')
-            html_recs = html_recs.replace('<th>', '<th style="font-size: 14px; font-weight: bold; color: black; padding: 8px; border: 1px solid #ddd; background-color: #f5f5f5; text-align: center;">')
-            html_recs = html_recs.replace('<td>', '<td style="font-size: 14px; font-weight: bold; color: black; padding: 8px; border: 1px solid #ddd; text-align: center;">')
+            html_recs = html_recs.replace('<th>', f'<th style="{th_style}">')
+            html_recs = html_recs.replace('<td>', f'<td style="{td_style}">')
             st.markdown(html_recs, unsafe_allow_html=True)
             
             # Summary stats - use raw numeric values from potentials before formatting
@@ -1264,24 +1222,36 @@ This is as close to "real" performance as you can get without live trading.
                         marker=dict(size=6)
                     ))
                     
+                    # Theme-aware chart colors
+                    if theme == "Light":
+                        chart_bg = 'white'
+                        grid_color = '#e0e0e0'
+                        font_color = '#000000'
+                    else:
+                        chart_bg = '#0e1117'
+                        grid_color = '#333333'
+                        font_color = '#fafafa'
+                    
                     fig_detail.update_layout(
                         title=dict(
                             text=f"{selected_day_detail} @ {day_entry_time} - Walk-Forward Performance ({day_optimal_lb} wk lookback)<br>"
                                  f"<span style='font-size:12px;color:#666'>{selected_symbol} - {selected_name}</span>",
                             x=0.5,
                             xanchor='center',
-                            font=dict(size=18)
+                            font=dict(size=18, color=font_color)
                         ),
                         xaxis_title="Test Week",
                         yaxis_title="Profit ($)",
                         height=500,
                         hovermode='x unified',
-                        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
-                        plot_bgcolor='white',
-                        barmode='overlay'
+                        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1, font=dict(color=font_color)),
+                        plot_bgcolor=chart_bg,
+                        paper_bgcolor=chart_bg,
+                        barmode='overlay',
+                        font=dict(color=font_color)
                     )
-                    fig_detail.update_yaxes(tickformat="$,.0f", gridcolor='#e0e0e0', zeroline=True, zerolinecolor='#666', zerolinewidth=1)
-                    fig_detail.update_xaxes(gridcolor='#e0e0e0')
+                    fig_detail.update_yaxes(tickformat="$,.0f", gridcolor=grid_color, zeroline=True, zerolinecolor='#666', zerolinewidth=1)
+                    fig_detail.update_xaxes(gridcolor=grid_color)
                     
                     st.plotly_chart(fig_detail, use_container_width=True)
                     
@@ -1338,23 +1308,35 @@ This is as close to "real" performance as you can get without live trading.
                 marker=dict(size=4)
             ))
         
+        # Theme-aware chart colors for summary chart
+        if theme == "Light":
+            chart_bg = 'white'
+            grid_color = '#e0e0e0'
+            font_color = '#000000'
+        else:
+            chart_bg = '#0e1117'
+            grid_color = '#333333'
+            font_color = '#fafafa'
+        
         fig.update_layout(
             title=dict(
                 text=f"Walk-Forward Performance by Day (Using Optimal Lookback per Day)<br>"
                      f"<span style='font-size:12px;color:#666'>{selected_symbol} - {selected_name}</span>",
                 x=0.5,
                 xanchor='center',
-                font=dict(size=18)
+                font=dict(size=18, color=font_color)
             ),
             xaxis_title="Test Week",
             yaxis_title="Cumulative Profit ($)",
             height=600,
             hovermode='x unified',
-            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
-            plot_bgcolor='white'
+            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1, font=dict(color=font_color)),
+            plot_bgcolor=chart_bg,
+            paper_bgcolor=chart_bg,
+            font=dict(color=font_color)
         )
-        fig.update_yaxes(tickformat="$,.0f", gridcolor='#e0e0e0')
-        fig.update_xaxes(gridcolor='#e0e0e0')
+        fig.update_yaxes(tickformat="$,.0f", gridcolor=grid_color)
+        fig.update_xaxes(gridcolor=grid_color)
         
         st.plotly_chart(fig, use_container_width=True)
         
