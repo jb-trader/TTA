@@ -102,6 +102,20 @@ def get_theme_css(theme):
             display: none !important;
         }}
         
+        /* Download buttons - always black text on white background */
+        .stDownloadButton button {{
+            background-color: #ffffff !important;
+            color: #000000 !important;
+            border: 1px solid #ddd !important;
+        }}
+        .stDownloadButton button:hover {{
+            background-color: #f0f0f0 !important;
+            color: #000000 !important;
+        }}
+        .stDownloadButton button p {{
+            color: #000000 !important;
+        }}
+        
         /* Dataframe font size */
         .stDataFrame {{
             font-size: 14px !important;
@@ -962,7 +976,7 @@ def main():
         "Min R² (Equity Curve Consistency)",
         min_value=0.0,
         max_value=0.9,
-        value=0.8,
+        value=0.7,
         step=0.1,
         help="R² measures how consistently profits accumulate. Higher = smoother equity curve. "
              "0.0 = no filter, 0.5 = moderate, 0.7 = strict. "
