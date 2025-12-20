@@ -1135,6 +1135,14 @@ Specifically, TTA:
 
 This is a research/analysis tool, not a signal service. It is based on M8B version 1.37 log data. 'Set it and forget it', no stop loss or profit target, i.e. let it go to expiration.
 
+---
+
+**About jb-trader:** jb-trader is not associated with Magic 8-Ball and does not receive any compensation, commissions, or fees from this service. jb-trader is a contributing member in the Discord group.
+
+**Learn more about Magic 8-Ball v1.37:**
+- [YouTube: Magic 8-Ball Overview](https://www.youtube.com/watch?v=g-g3ICKb9Wo)
+- [LaunchPass: Magic 8-Ball Members](https://launchpass.com/magic-8-ball/members)
+
 </div>
         """, unsafe_allow_html=True)
     
