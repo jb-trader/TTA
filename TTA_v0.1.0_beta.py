@@ -895,6 +895,69 @@ def select_optimal_lookbacks(summary, min_r_squared=0.0):
     return optimal_by_day
 
 
+def generate_performance_tracker(results_df, optimal_by_day, symbol, strategy):
+    """
+    Generate performance tracker data showing historical walk-forward results.
+    
+    Uses the optimal lookback for each day to show what TTA would have recommended
+    and the actual profit achieved.
+    
+    Args:
+        results_df: Full walk-forward results DataFrame
+        optimal_by_day: DataFrame with optimal lookback per day
+        symbol: Trading symbol
+        strategy: Strategy name
+    
+    Returns:
+        DataFrame with trade-level performance data
+    """
+    if results_df is None or results_df.empty or optimal_by_day is None:
+        return pd.DataFrame()
+    
+    tracker_rows = []
+    
+    for _, opt_row in optimal_by_day.iterrows():
+        day = opt_row['day_of_week']
+        optimal_lb = int(opt_row['lookback_weeks'])
+        
+        # Skip days without valid lookback
+        if optimal_lb == 0:
+            continue
+        
+        # Get results for this day using its optimal lookback
+        day_results = results_df[
+            (results_df['day_of_week'] == day) &
+            (results_df['lookback_weeks'] == optimal_lb)
+        ].copy()
+        
+        for _, row in day_results.iterrows():
+            # Convert week_start to actual trade date for this day
+            week_start = row['test_week']
+            day_offset = WEEKDAY_ORDER.get(day, 0)
+            trade_date = week_start + timedelta(days=day_offset)
+            
+            tracker_rows.append({
+                'Symbol': symbol,
+                'Strategy': strategy,
+                'Date': trade_date,
+                'Day': day,
+                'Entry_Time': row['predicted_entry_time'],
+                'Profit': row['actual_profit'],
+                'Trades': row['actual_trades'],
+                'Win_Rate': row['win_rate'],
+                'Lookback': optimal_lb
+            })
+    
+    if not tracker_rows:
+        return pd.DataFrame()
+    
+    tracker_df = pd.DataFrame(tracker_rows)
+    tracker_df = tracker_df.sort_values('Date').reset_index(drop=True)
+    tracker_df['Accum_Profit'] = tracker_df['Profit'].cumsum()
+    
+    return tracker_df
+
+
 def get_week_recommendations(df, optimal_by_day, week_offset=1):
     """
     Generate potentials for a target week using day-specific optimal lookback periods.
@@ -1899,6 +1962,223 @@ ALL day × lookback combos:
 - `avg_win_rate` - Win rate
 - `r_squared` - Consistency (0-1)
                 """)
+        
+        st.markdown("<p style='font-size: 13px; color: gray; margin-top: 10px;'>📊 Full performance history available in <strong>TTA Performance Tracker</strong> below.</p>", unsafe_allow_html=True)
+        
+        # ====================================================================
+        # TTA PERFORMANCE TRACKER
+        # ====================================================================
+        st.markdown("---")
+        st.subheader("📊 TTA Performance Tracker")
+        st.markdown("*Historical walk-forward results showing what TTA would have recommended and actual profits achieved.*")
+        
+        # Generate tracker data
+        tracker_df = generate_performance_tracker(
+            results_df, optimal_by_day, selected_symbol, selected_name
+        )
+        
+        if tracker_df.empty:
+            st.warning("No performance data available for the current filter settings.")
+        else:
+            # Settings summary at top
+            with st.expander("⚙️ Current Filter Settings", expanded=False):
+                settings_col1, settings_col2, settings_col3 = st.columns(3)
+                
+                with settings_col1:
+                    st.markdown("**Exclusions:**")
+                    excl_list = []
+                    if exclude_fomc:
+                        excl_list.append("• FOMC")
+                    if exclude_earnings_e:
+                        excl_list.append("• Earnings (E)")
+                    if exclude_earnings_e1:
+                        excl_list.append("• Earnings (E+1)")
+                    if rebal_month_end:
+                        excl_list.append("• End of Month")
+                    if rebal_t1:
+                        excl_list.append("• T-1")
+                    if rebal_t2:
+                        excl_list.append("• T-2")
+                    if rebal_qtr_only:
+                        excl_list.append("• Quarter End Only")
+                    
+                    if excl_list:
+                        st.markdown("\n".join(excl_list))
+                    else:
+                        st.markdown("*None*")
+                
+                with settings_col2:
+                    # Butterfly-only filters
+                    if 'Butterfly' in selected_name:
+                        st.markdown("**Butterfly Filters:**")
+                        if exclude_illiquid_strikes:
+                            st.markdown("• Illiquid Strikes Excluded")
+                        if predict_distance_enabled:
+                            st.markdown(f"• Predict Distance ≤ {predict_distance_value}")
+                        if not exclude_illiquid_strikes and not predict_distance_enabled:
+                            st.markdown("*None*")
+                    else:
+                        st.markdown("**Strategy:**")
+                        st.markdown(f"{selected_name}")
+                
+                with settings_col3:
+                    st.markdown("**Quality & Performance:**")
+                    r2_desc = get_r_squared_descriptor(min_r_squared) if min_r_squared > 0 else "No filter"
+                    st.markdown(f"• Min R²: {min_r_squared:.2f} ({r2_desc})")
+                    st.markdown(f"• Max Lookback: {max_lookback} weeks")
+            
+            # Date range filter
+            st.markdown("**Date Range Filter:**")
+            date_col1, date_col2, date_col3 = st.columns([1, 1, 2])
+            
+            min_date = tracker_df['Date'].min().date()
+            max_date = tracker_df['Date'].max().date()
+            
+            with date_col1:
+                start_date = st.date_input(
+                    "Start Date",
+                    value=min_date,
+                    min_value=min_date,
+                    max_value=max_date,
+                    key="tracker_start_date"
+                )
+            
+            with date_col2:
+                end_date = st.date_input(
+                    "End Date",
+                    value=max_date,
+                    min_value=min_date,
+                    max_value=max_date,
+                    key="tracker_end_date"
+                )
+            
+            # Filter by date range
+            filtered_tracker = tracker_df[
+                (tracker_df['Date'].dt.date >= start_date) &
+                (tracker_df['Date'].dt.date <= end_date)
+            ].copy()
+            
+            if filtered_tracker.empty:
+                st.warning("No data in selected date range.")
+            else:
+                # Recalculate cumulative profit for filtered range
+                filtered_tracker = filtered_tracker.sort_values('Date').reset_index(drop=True)
+                filtered_tracker['Accum_Profit'] = filtered_tracker['Profit'].cumsum()
+                
+                # Summary metrics
+                total_profit = filtered_tracker['Profit'].sum()
+                total_trades = len(filtered_tracker)
+                winning_trades = (filtered_tracker['Profit'] > 0).sum()
+                win_rate = winning_trades / total_trades if total_trades > 0 else 0
+                avg_profit = total_profit / total_trades if total_trades > 0 else 0
+                
+                metric_col1, metric_col2, metric_col3, metric_col4 = st.columns(4)
+                with metric_col1:
+                    st.metric("Total Profit", f"${total_profit:,.0f}")
+                with metric_col2:
+                    st.metric("Total Trades", f"{total_trades}")
+                with metric_col3:
+                    st.metric("Win Rate", f"{win_rate:.1%}")
+                with metric_col4:
+                    st.metric("Avg Profit/Trade", f"${avg_profit:,.0f}")
+                
+                # Equity Curve Chart
+                st.markdown("**Equity Curve:**")
+                
+                # Theme-aware chart colors
+                if theme == "Light":
+                    chart_bg = 'white'
+                    grid_color = '#e0e0e0'
+                    font_color = '#000000'
+                    line_color = '#2E86AB'
+                else:
+                    chart_bg = '#0e1117'
+                    grid_color = '#333333'
+                    font_color = '#fafafa'
+                    line_color = '#4ECDC4'
+                
+                fig_equity = go.Figure()
+                fig_equity.add_trace(go.Scatter(
+                    x=filtered_tracker['Date'],
+                    y=filtered_tracker['Accum_Profit'],
+                    mode='lines+markers',
+                    name='Cumulative Profit',
+                    line=dict(color=line_color, width=2),
+                    marker=dict(size=4),
+                    hovertemplate='<b>%{x|%Y-%m-%d}</b><br>Cumulative: $%{y:,.0f}<extra></extra>'
+                ))
+                
+                fig_equity.update_layout(
+                    title=dict(
+                        text=f"TTA Performance: {selected_symbol} - {selected_name}",
+                        x=0.5,
+                        xanchor='center',
+                        font=dict(size=16, color=font_color)
+                    ),
+                    xaxis_title="Date",
+                    yaxis_title="Cumulative Profit ($)",
+                    height=400,
+                    hovermode='x unified',
+                    plot_bgcolor=chart_bg,
+                    paper_bgcolor=chart_bg,
+                    font=dict(color=font_color)
+                )
+                fig_equity.update_yaxes(tickformat="$,.0f", gridcolor=grid_color)
+                fig_equity.update_xaxes(gridcolor=grid_color)
+                
+                st.plotly_chart(fig_equity, use_container_width=True)
+                
+                # Results Table
+                st.markdown("**Trade History:**")
+                
+                # Format display table
+                display_tracker = filtered_tracker.copy()
+                display_tracker['Date'] = display_tracker['Date'].dt.strftime('%Y-%m-%d')
+                display_tracker['Profit'] = display_tracker['Profit'].apply(lambda x: f"${x:,.0f}")
+                display_tracker['Accum_Profit'] = display_tracker['Accum_Profit'].apply(lambda x: f"${x:,.0f}")
+                display_tracker['Win_Rate'] = display_tracker['Win_Rate'].apply(lambda x: f"{x:.1%}")
+                display_tracker['Lookback'] = display_tracker['Lookback'].apply(lambda x: f"{x} wks")
+                
+                display_cols = ['Date', 'Day', 'Entry_Time', 'Profit', 'Accum_Profit', 'Trades', 'Win_Rate', 'Lookback']
+                display_tracker = display_tracker[display_cols]
+                display_tracker.columns = ['Date', 'Day', 'Entry Time', 'Profit', 'Accum Profit', 'Trades', 'Win Rate', 'Lookback']
+                
+                # Show table with scrolling
+                st.dataframe(display_tracker, use_container_width=True, height=400)
+                
+                # CSV Download - Full report with all settings
+                st.markdown("**Download Full Report:**")
+                
+                # Build full CSV with settings in each row
+                export_df = filtered_tracker.copy()
+                export_df['Date'] = export_df['Date'].dt.strftime('%Y-%m-%d')
+                
+                # Add filter settings columns
+                export_df['FOMC_Excluded'] = 'Yes' if exclude_fomc else 'No'
+                export_df['Earnings_E_Excluded'] = 'Yes' if exclude_earnings_e else 'No'
+                export_df['Earnings_E1_Excluded'] = 'Yes' if exclude_earnings_e1 else 'No'
+                export_df['Month_End_Excluded'] = 'Yes' if rebal_month_end else 'No'
+                export_df['T1_Excluded'] = 'Yes' if rebal_t1 else 'No'
+                export_df['T2_Excluded'] = 'Yes' if rebal_t2 else 'No'
+                export_df['Quarter_Only'] = 'Yes' if rebal_qtr_only else 'No'
+                
+                # Butterfly-only columns
+                if 'Butterfly' in selected_name:
+                    export_df['Illiquid_Strikes_Excluded'] = 'Yes' if exclude_illiquid_strikes else 'No'
+                    export_df['Predict_Distance'] = predict_distance_value if predict_distance_enabled else 'N/A'
+                
+                export_df['Min_R2'] = min_r_squared
+                export_df['Min_R2_Desc'] = get_r_squared_descriptor(min_r_squared) if min_r_squared > 0 else 'No filter'
+                export_df['Max_Lookback'] = max_lookback
+                
+                csv_tracker = export_df.to_csv(index=False)
+                st.download_button(
+                    label="📥 Download TTA Performance Tracker (CSV)",
+                    data=csv_tracker,
+                    file_name=f"TTA_PerformanceTracker_{selected_symbol}_{selected_name}_{datetime.now():%Y%m%d}.csv",
+                    mime="text/csv",
+                    use_container_width=True
+                )
 
 
 if __name__ == "__main__":
