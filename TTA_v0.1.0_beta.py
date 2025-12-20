@@ -1380,32 +1380,14 @@ def main():
                 mime="application/pdf"
             )
             
-            # Print button - opens PDF in new tab for printing
-            import base64
-            pdf_base64 = base64.b64encode(pdf_bytes).decode('utf-8')
-            print_html = f'''
-                <script>
-                    function openPdfForPrint() {{
-                        var pdfWindow = window.open("");
-                        pdfWindow.document.write(
-                            '<html><head><title>TTA Trade Plan</title></head>' +
-                            '<body style="margin:0;padding:0;">' +
-                            '<embed width="100%" height="100%" src="data:application/pdf;base64,{pdf_base64}" type="application/pdf" />' +
-                            '</body></html>'
-                        );
-                    }}
-                </script>
-                <button onclick="openPdfForPrint()" style="
-                    width: 100%;
-                    padding: 0.5rem 1rem;
-                    background-color: white;
-                    border: 1px solid #ccc;
-                    border-radius: 0.5rem;
-                    cursor: pointer;
-                    font-size: 14px;
-                ">🖨️ Print Trade Plan (PDF)</button>
-            '''
-            print_button_placeholder.markdown(print_html, unsafe_allow_html=True)
+            # Print button - download PDF for printing
+            print_filename = f"TTA_TradePlan_PRINT_{rec_data['symbol']}_{rec_data['target_monday']:%Y%m%d}.pdf"
+            print_button_placeholder.download_button(
+                label="🖨️ Print Trade Plan (PDF)",
+                data=pdf_bytes,
+                file_name=print_filename,
+                mime="application/pdf"
+            )
             
             st.info(f"**Trading Week:** {target_monday:%B %d, %Y} - {target_friday:%B %d, %Y}")
             st.write(f"**Symbol:** {selected_symbol} | **Strategy:** {selected_name}")
