@@ -19,6 +19,7 @@ import requests
 from io import BytesIO
 import re
 import pytz
+import base64
 from fpdf import FPDF
 
 # Import config for Google Drive URL and exclusion dates
@@ -161,6 +162,17 @@ def get_theme_css(theme):
            HIDE ONLY THE COLLAPSE BUTTON (not sidebar)
            ======================================== */
         button[data-testid="stSidebarCollapseButton"] {{
+            display: none !important;
+        }}
+        
+        /* Hide the >> expand button that appears on hover */
+        button[data-testid="stSidebarNavCollapseButton"] {{
+            display: none !important;
+        }}
+        [data-testid="stSidebarCollapsedControl"] {{
+            display: none !important;
+        }}
+        [data-testid="collapsedControl"] {{
             display: none !important;
         }}
         
@@ -1371,14 +1383,31 @@ def main():
                 strategy=rec_data['strategy'],
                 recommendations_df=rec_data['df']
             )
-            # Print button - download PDF for printing
-            print_filename = f"TTA_TradePlan_{rec_data['symbol']}_{rec_data['target_monday']:%Y%m%d}.pdf"
-            print_button_placeholder.download_button(
-                label="🖨️ Print Trade Plan (PDF)",
-                data=pdf_bytes,
-                file_name=print_filename,
-                mime="application/pdf"
-            )
+            # Print button - opens PDF in new tab for printing/saving
+            pdf_base64 = base64.b64encode(pdf_bytes).decode('utf-8')
+            
+            # Create a styled link that looks like a Streamlit button
+            print_html = f'''
+                <a href="data:application/pdf;base64,{pdf_base64}" 
+                   target="_blank" 
+                   style="
+                        display: inline-flex;
+                        align-items: center;
+                        justify-content: center;
+                        width: 100%;
+                        padding: 0.5rem 1rem;
+                        background-color: rgb(255, 255, 255);
+                        color: rgb(49, 51, 63);
+                        border: 1px solid rgba(49, 51, 63, 0.2);
+                        border-radius: 0.5rem;
+                        cursor: pointer;
+                        font-size: 14px;
+                        font-weight: 400;
+                        text-decoration: none;
+                        box-sizing: border-box;
+                    ">🖨️ Print Trade Plan (PDF)</a>
+            '''
+            print_button_placeholder.markdown(print_html, unsafe_allow_html=True)
             
             st.info(f"**Trading Week:** {target_monday:%B %d, %Y} - {target_friday:%B %d, %Y}")
             st.write(f"**Symbol:** {selected_symbol} | **Strategy:** {selected_name}")
