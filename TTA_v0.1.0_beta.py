@@ -1002,7 +1002,6 @@ def main():
     theme = st.sidebar.radio("Mode", ["Light", "Dark"], index=0, horizontal=True, label_visibility="collapsed")
     
     # PDF button placeholders - will be rendered after recommendations are generated
-    pdf_button_placeholder = st.sidebar.empty()
     print_button_placeholder = st.sidebar.empty()
     
     st.sidebar.markdown("---")
@@ -1372,16 +1371,8 @@ def main():
                 strategy=rec_data['strategy'],
                 recommendations_df=rec_data['df']
             )
-            filename = f"TTA_TradePlan_{rec_data['symbol']}_{rec_data['target_monday']:%Y%m%d}.pdf"
-            pdf_button_placeholder.download_button(
-                label="📄 Save Trade Plan (PDF)",
-                data=pdf_bytes,
-                file_name=filename,
-                mime="application/pdf"
-            )
-            
             # Print button - download PDF for printing
-            print_filename = f"TTA_TradePlan_PRINT_{rec_data['symbol']}_{rec_data['target_monday']:%Y%m%d}.pdf"
+            print_filename = f"TTA_TradePlan_{rec_data['symbol']}_{rec_data['target_monday']:%Y%m%d}.pdf"
             print_button_placeholder.download_button(
                 label="🖨️ Print Trade Plan (PDF)",
                 data=pdf_bytes,
