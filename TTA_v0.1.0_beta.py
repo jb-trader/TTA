@@ -952,6 +952,8 @@ def generate_performance_tracker(results_df, optimal_by_day, symbol, strategy):
         return pd.DataFrame()
     
     tracker_df = pd.DataFrame(tracker_rows)
+    # Ensure Date is a proper datetime type
+    tracker_df['Date'] = pd.to_datetime(tracker_df['Date'])
     tracker_df = tracker_df.sort_values('Date').reset_index(drop=True)
     tracker_df['Accum_Profit'] = tracker_df['Profit'].cumsum()
     
