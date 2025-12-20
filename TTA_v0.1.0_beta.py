@@ -126,7 +126,7 @@ st.set_page_config(
     page_title="Time Trends Auto (TTA v0.1.0 beta) by jb-trader",
     page_icon="🎱",
     layout="wide",
-    initial_sidebar_state="auto"
+    initial_sidebar_state="expanded"
 )
 
 VERSION = "1.0"
@@ -141,7 +141,6 @@ def get_theme_css(theme):
         header_bg = "#ffffff"
         table_header_bg = "#f5f5f5"
         border_color = "#ddd"
-        collapse_btn_color = "#1f77b4"  # Blue - visible on light
     else:  # Dark
         bg_color = "#0e1117"
         sidebar_bg = "#262730"
@@ -149,7 +148,6 @@ def get_theme_css(theme):
         header_bg = "#0e1117"
         table_header_bg = "#262730"
         border_color = "#444"
-        collapse_btn_color = "#4da6ff"  # Lighter blue - visible on dark
     
     return f"""
     <style>
@@ -165,17 +163,15 @@ def get_theme_css(theme):
         header [data-testid="stToolbar"] {{display: none !important;}}
         
         /* ========================================
-           SIDEBAR COLLAPSE/EXPAND BUTTON FIX
-           (Make visible in both themes)
+           HIDE SIDEBAR COLLAPSE/EXPAND BUTTON
+           (Keep sidebar always visible)
            ======================================== */
         button[data-testid="stSidebarCollapseButton"],
-        button[data-testid="baseButton-headerNoPadding"] {{
-            color: {collapse_btn_color} !important;
-        }}
-        button[data-testid="stSidebarCollapseButton"] svg,
-        button[data-testid="baseButton-headerNoPadding"] svg {{
-            stroke: {collapse_btn_color} !important;
-            fill: {collapse_btn_color} !important;
+        button[data-testid="baseButton-headerNoPadding"],
+        [data-testid="stSidebarCollapseButton"],
+        [data-testid="collapsedControl"] {{
+            display: none !important;
+            visibility: hidden !important;
         }}
         
         /* ========================================
