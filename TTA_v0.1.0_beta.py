@@ -1007,24 +1007,8 @@ def main():
     st.sidebar.markdown("**🎨 Theme**")
     theme = st.sidebar.radio("Mode", ["Light", "Dark"], index=0, horizontal=True, label_visibility="collapsed")
     
-    # PDF Download button - only show if we have recommendations in session state
-    if 'recommendations' in st.session_state and st.session_state['recommendations'] is not None:
-        rec_data = st.session_state['recommendations']
-        pdf_bytes = generate_trade_plan_pdf(
-            week_type=rec_data['week_type'],
-            target_monday=rec_data['target_monday'],
-            target_friday=rec_data['target_friday'],
-            symbol=rec_data['symbol'],
-            strategy=rec_data['strategy'],
-            recommendations_df=rec_data['df']
-        )
-        filename = f"TTA_TradePlan_{rec_data['symbol']}_{rec_data['target_monday']:%Y%m%d}.pdf"
-        st.sidebar.download_button(
-            label="📄 Save Trade Plan (PDF)",
-            data=pdf_bytes,
-            file_name=filename,
-            mime="application/pdf"
-        )
+    # PDF button placeholder - will be rendered after recommendations are generated
+    pdf_button_placeholder = st.sidebar.empty()
     
     st.sidebar.markdown("---")
     
@@ -1382,6 +1366,24 @@ def main():
                 'strategy': selected_name,
                 'df': recommendations.copy()
             }
+            
+            # Render PDF download button in sidebar placeholder
+            rec_data = st.session_state['recommendations']
+            pdf_bytes = generate_trade_plan_pdf(
+                week_type=rec_data['week_type'],
+                target_monday=rec_data['target_monday'],
+                target_friday=rec_data['target_friday'],
+                symbol=rec_data['symbol'],
+                strategy=rec_data['strategy'],
+                recommendations_df=rec_data['df']
+            )
+            filename = f"TTA_TradePlan_{rec_data['symbol']}_{rec_data['target_monday']:%Y%m%d}.pdf"
+            pdf_button_placeholder.download_button(
+                label="📄 Save Trade Plan (PDF)",
+                data=pdf_bytes,
+                file_name=filename,
+                mime="application/pdf"
+            )
             
             st.info(f"**Trading Week:** {target_monday:%B %d, %Y} - {target_friday:%B %d, %Y}")
             st.write(f"**Symbol:** {selected_symbol} | **Strategy:** {selected_name}")
