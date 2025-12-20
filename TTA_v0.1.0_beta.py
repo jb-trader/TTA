@@ -899,7 +899,7 @@ def generate_performance_tracker(results_df, optimal_by_day, symbol, strategy):
     """
     Generate performance tracker data showing historical walk-forward results.
     
-    Uses the optimal lookback for each day to show what TTA would have recommended
+    Uses the optimal lookback for each day to show what TTA would have listed
     and the actual profit achieved.
     
     Args:
@@ -1972,7 +1972,7 @@ ALL day × lookback combos:
         # ====================================================================
         st.markdown("---")
         st.subheader("📊 TTA Performance Tracker")
-        st.markdown("*Historical walk-forward results showing what TTA would have recommended and actual profits achieved.*")
+        st.markdown("*Historical walk-forward results showing what TTA would have listed and actual profits achieved.*")
         
         # Generate tracker data
         tracker_df = generate_performance_tracker(
