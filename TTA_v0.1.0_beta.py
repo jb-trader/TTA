@@ -1402,7 +1402,29 @@ def main():
         # Check if filter settings have changed since last run (for warning)
         if 'last_run_filters' in st.session_state:
             if current_filters != st.session_state['last_run_filters'] and not auto_run:
-                st.warning("⚠️ Filter settings have changed. Click **Run Walk-Forward Analysis** to update displayed results.")
+                st.markdown("""
+                <style>
+                    @keyframes flash {
+                        0%, 50%, 100% { opacity: 1; }
+                        25%, 75% { opacity: 0.4; }
+                    }
+                    .flash-warning {
+                        animation: flash 1.5s infinite;
+                        background-color: #fff3cd;
+                        border: 2px solid #ffc107;
+                        border-radius: 8px;
+                        padding: 15px 20px;
+                        margin: 10px 0;
+                        font-size: 20px;
+                        font-weight: bold;
+                        color: #856404;
+                        text-align: center;
+                    }
+                </style>
+                <div class="flash-warning">
+                    ⚠️ Filter settings have changed. Click <span style="color: #d63384;">Run Walk-Forward Analysis</span> to update displayed results.
+                </div>
+                """, unsafe_allow_html=True)
         
         summary_df = st.session_state['summary_df']
         results_df = st.session_state['results_df']
