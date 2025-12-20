@@ -153,25 +153,23 @@ def get_theme_css(theme):
     <style>
         /* ========================================
            HIDE STREAMLIT'S HAMBURGER MENU
-           (Users will use sidebar controls only)
            ======================================== */
         #MainMenu {{display: none !important;}}
-        button[kind="header"] {{display: none !important;}}
-        header[data-testid="stHeader"] button {{display: none !important;}}
-        
-        /* Hide the settings menu icon specifically */
         header [data-testid="stToolbar"] {{display: none !important;}}
         
         /* ========================================
-           HIDE SIDEBAR COLLAPSE/EXPAND BUTTON
-           (Keep sidebar always visible)
+           HIDE ONLY THE COLLAPSE BUTTON (not sidebar)
            ======================================== */
-        button[data-testid="stSidebarCollapseButton"],
-        button[data-testid="baseButton-headerNoPadding"],
-        [data-testid="stSidebarCollapseButton"],
-        [data-testid="collapsedControl"] {{
+        button[data-testid="stSidebarCollapseButton"] {{
             display: none !important;
-            visibility: hidden !important;
+        }}
+        
+        /* Ensure sidebar stays visible */
+        section[data-testid="stSidebar"] {{
+            display: block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+            transform: none !important;
         }}
         
         /* ========================================
