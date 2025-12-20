@@ -1383,42 +1383,14 @@ def main():
                 strategy=rec_data['strategy'],
                 recommendations_df=rec_data['df']
             )
-            # Print button - opens PDF in new window for printing/saving
-            pdf_base64 = base64.b64encode(pdf_bytes).decode('utf-8')
-            
-            # Create a styled button that opens PDF via blob URL (better browser support)
-            print_html = f'''
-                <script>
-                    function openPdfForPrint() {{
-                        var byteCharacters = atob('{pdf_base64}');
-                        var byteNumbers = new Array(byteCharacters.length);
-                        for (var i = 0; i < byteCharacters.length; i++) {{
-                            byteNumbers[i] = byteCharacters.charCodeAt(i);
-                        }}
-                        var byteArray = new Uint8Array(byteNumbers);
-                        var blob = new Blob([byteArray], {{type: 'application/pdf'}});
-                        var blobUrl = URL.createObjectURL(blob);
-                        window.open(blobUrl, '_blank');
-                    }}
-                </script>
-                <button onclick="openPdfForPrint()" style="
-                        display: inline-flex;
-                        align-items: center;
-                        justify-content: center;
-                        width: 100%;
-                        padding: 0.5rem 1rem;
-                        background-color: rgb(255, 255, 255);
-                        color: rgb(49, 51, 63);
-                        border: 1px solid rgba(49, 51, 63, 0.2);
-                        border-radius: 0.5rem;
-                        cursor: pointer;
-                        font-size: 14px;
-                        font-weight: 400;
-                        text-decoration: none;
-                        box-sizing: border-box;
-                    ">🖨️ Print Trade Plan (PDF)</button>
-            '''
-            print_button_placeholder.markdown(print_html, unsafe_allow_html=True)
+            # Print button - downloads PDF for printing/saving
+            print_filename = f"TTA_TradePlan_{rec_data['symbol']}_{rec_data['target_monday']:%Y%m%d}.pdf"
+            print_button_placeholder.download_button(
+                label="🖨️ Print Trade Plan (PDF)",
+                data=pdf_bytes,
+                file_name=print_filename,
+                mime="application/pdf"
+            )
             
             st.info(f"**Trading Week:** {target_monday:%B %d, %Y} - {target_friday:%B %d, %Y}")
             st.write(f"**Symbol:** {selected_symbol} | **Strategy:** {selected_name}")
