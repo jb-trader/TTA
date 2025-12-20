@@ -1457,15 +1457,17 @@ def main():
             st.markdown("""
             <div style="
                 background-color: #FFFF00 !important;
-                border: 2px solid #cc0000;
+                border: 3px solid #000000;
                 border-radius: 8px;
-                padding: 10px 15px;
+                padding: 12px 15px;
                 margin-top: 5px;
             ">
-                <span style="color: #cc0000 !important; font-size: 13px; font-weight: 500;">
-                    <strong style="color: #cc0000 !important;">Disclaimer:</strong> 
-                    This app is for educational purposes only. It does not provide investment advice, 
-                    and the options trades shown are not recommendations. Options trading involves 
+                <div style="color: #000000 !important; font-size: 16px; font-weight: bold; margin-bottom: 6px; text-align: center;">
+                    ⚠️ IMPORTANT DISCLAIMER
+                </div>
+                <span style="color: #000000 !important; font-size: 14px; line-height: 1.4;">
+                    This application is for educational purposes only. It does <strong>NOT</strong> provide investment advice, 
+                    and the options trades shown in the Trade Plan are not recommendations. Options trading involves 
                     substantial risk and may result in the loss of all invested capital. Past performance 
                     is not indicative of future results. Users are solely responsible for their trading decisions.
                 </span>
