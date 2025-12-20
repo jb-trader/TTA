@@ -1977,8 +1977,6 @@ ALL day × lookback combos:
 - `r_squared` - Consistency (0-1)
                 """)
         
-        st.markdown("<p style='font-size: 13px; color: gray; margin-top: 10px;'>📊 Full performance history available in <strong>TTA Performance Tracker</strong> below.</p>", unsafe_allow_html=True)
-        
         # ====================================================================
         # TTA PERFORMANCE TRACKER
         # ====================================================================
@@ -2108,16 +2106,20 @@ ALL day × lookback combos:
                 with metric_col4:
                     st.metric("Avg Profit/Trade", f"${avg_profit:,.0f}")
                 
-                # Second row of metrics
+                # Second row of metrics with conditional rerun button
                 metric_col5, metric_col6, metric_col7, metric_col8 = st.columns(4)
                 with metric_col5:
                     st.metric("Worst Day Loss", f"${worst_day_loss:,.0f}")
                 with metric_col6:
-                    st.metric("Max Drawdown", f"${max_drawdown:,.0f}")
+                    st.metric("Max Drawdown", f"-${max_drawdown:,.0f}")
                 with metric_col7:
-                    st.empty()  # Placeholder for future metrics
+                    # Show rerun button if filters have changed and auto-run is off
+                    if 'last_run_filters' in st.session_state and current_filters != st.session_state['last_run_filters'] and not auto_run:
+                        if st.button("🔄 Rerun Analysis", type="primary", key="tracker_rerun_button"):
+                            st.session_state['trigger_run_from_warning'] = True
+                            st.rerun()
                 with metric_col8:
-                    st.empty()  # Placeholder for future metrics
+                    pass
                 
                 # Equity Curve Chart
                 st.markdown("**Equity Curve:**")
@@ -2134,6 +2136,12 @@ ALL day × lookback combos:
                     font_color = '#fafafa'
                     line_color = '#4ECDC4'
                 
+                # Find max drawdown location for visualization
+                drawdown_idx = drawdown.idxmax()  # Index where max drawdown occurred
+                drawdown_date = filtered_tracker.loc[drawdown_idx, 'Date']
+                drawdown_trough = filtered_tracker.loc[drawdown_idx, 'Accum_Profit']
+                drawdown_peak = running_max.loc[drawdown_idx]  # Peak value at that point
+                
                 fig_equity = go.Figure()
                 fig_equity.add_trace(go.Scatter(
                     x=filtered_tracker['Date'],
@@ -2144,6 +2152,18 @@ ALL day × lookback combos:
                     marker=dict(size=4),
                     hovertemplate='<b>%{x|%Y-%m-%d}</b><br>Cumulative: $%{y:,.0f}<extra></extra>'
                 ))
+                
+                # Add red vertical line showing max drawdown
+                if max_drawdown > 0:
+                    fig_equity.add_trace(go.Scatter(
+                        x=[drawdown_date, drawdown_date],
+                        y=[drawdown_peak, drawdown_trough],
+                        mode='lines+markers',
+                        name=f'Max Drawdown (-${max_drawdown:,.0f})',
+                        line=dict(color='red', width=3),
+                        marker=dict(size=8, color='red'),
+                        hovertemplate=f'<b>Max Drawdown</b><br>Peak: ${drawdown_peak:,.0f}<br>Trough: ${drawdown_trough:,.0f}<br>Drawdown: -${max_drawdown:,.0f}<extra></extra>'
+                    ))
                 
                 fig_equity.update_layout(
                     title=dict(
@@ -2158,7 +2178,13 @@ ALL day × lookback combos:
                     hovermode='x unified',
                     plot_bgcolor=chart_bg,
                     paper_bgcolor=chart_bg,
-                    font=dict(color=font_color)
+                    font=dict(color=font_color),
+                    legend=dict(
+                        yanchor="top",
+                        y=0.99,
+                        xanchor="left",
+                        x=0.01
+                    )
                 )
                 fig_equity.update_yaxes(tickformat="$,.0f", gridcolor=grid_color)
                 fig_equity.update_xaxes(gridcolor=grid_color)
