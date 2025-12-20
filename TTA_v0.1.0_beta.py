@@ -1383,14 +1383,25 @@ def main():
                 strategy=rec_data['strategy'],
                 recommendations_df=rec_data['df']
             )
-            # Print button - opens PDF in new tab for printing/saving
+            # Print button - opens PDF in new window for printing/saving
             pdf_base64 = base64.b64encode(pdf_bytes).decode('utf-8')
             
-            # Create a styled link that looks like a Streamlit button
+            # Create a styled button that opens PDF via blob URL (better browser support)
             print_html = f'''
-                <a href="data:application/pdf;base64,{pdf_base64}" 
-                   target="_blank" 
-                   style="
+                <script>
+                    function openPdfForPrint() {{
+                        var byteCharacters = atob('{pdf_base64}');
+                        var byteNumbers = new Array(byteCharacters.length);
+                        for (var i = 0; i < byteCharacters.length; i++) {{
+                            byteNumbers[i] = byteCharacters.charCodeAt(i);
+                        }}
+                        var byteArray = new Uint8Array(byteNumbers);
+                        var blob = new Blob([byteArray], {{type: 'application/pdf'}});
+                        var blobUrl = URL.createObjectURL(blob);
+                        window.open(blobUrl, '_blank');
+                    }}
+                </script>
+                <button onclick="openPdfForPrint()" style="
                         display: inline-flex;
                         align-items: center;
                         justify-content: center;
@@ -1405,7 +1416,7 @@ def main():
                         font-weight: 400;
                         text-decoration: none;
                         box-sizing: border-box;
-                    ">🖨️ Print Trade Plan (PDF)</a>
+                    ">🖨️ Print Trade Plan (PDF)</button>
             '''
             print_button_placeholder.markdown(print_html, unsafe_allow_html=True)
             
