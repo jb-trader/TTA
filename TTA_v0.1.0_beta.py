@@ -1761,7 +1761,7 @@ This is as close to "real" performance as you can get without live trading.
         st.markdown("**CSV Download Files**")
         
         # Download buttons in a row
-        col1, col2, col3, col4 = st.columns([1, 1, 1, 2])
+        col1, col2, col3 = st.columns([1, 1, 2])
         
         with col1:
             csv_optimal = optimal_by_day.to_csv(index=False)
@@ -1782,18 +1782,6 @@ This is as close to "real" performance as you can get without live trading.
             )
         
         with col3:
-            if not recommendations.empty:
-                potentials_df = recommendations[['Day_of_week', 'Entry_Time']].copy()
-                potentials_df.columns = ['Day', 'Entry_Time']
-                csv_potentials = potentials_df.to_csv(index=False)
-                st.download_button(
-                    label="📥 Potential Trades",
-                    data=csv_potentials,
-                    file_name=f"WF_PotentialTrades_{selected_symbol}_{selected_name}_{datetime.now():%Y%m%d}.csv",
-                    mime="text/csv"
-                )
-        
-        with col4:
             st.markdown(
                 "<div class='disclaimer-box' style='font-size: 12px; color: #cc0000 !important; background-color: yellow; margin-top: 0px; padding: 6px;'>"
                 "<strong style='color: #cc0000 !important;'>Disclaimer:</strong> "
@@ -1805,7 +1793,7 @@ This is as close to "real" performance as you can get without live trading.
         
         # File descriptions in expanders - full width below buttons
         with st.expander("ℹ️ What's in these files? (click to expand)"):
-            desc_col1, desc_col2, desc_col3 = st.columns(3)
+            desc_col1, desc_col2 = st.columns(2)
             
             with desc_col1:
                 st.markdown("""
@@ -1831,17 +1819,6 @@ ALL day × lookback combos:
 - `total_trades` - Trade count (>20)
 - `avg_win_rate` - Win rate
 - `r_squared` - Consistency (0-1)
-                """)
-            
-            with desc_col3:
-                st.markdown("""
-**📥 Potential Trades**
-
-Simple 2-column actionable output:
-- `Day` - Monday-Friday
-- `Entry_Time` - Recommended time
-
-*Use this for next week's trading.*
                 """)
 
 
