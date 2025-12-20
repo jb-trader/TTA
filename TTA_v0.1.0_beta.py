@@ -11,7 +11,7 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
-from datetime import datetime, timedelta, time, date
+from datetime import datetime, timedelta, time
 from calendar import monthrange
 from pathlib import Path
 import warnings
@@ -1263,56 +1263,14 @@ This is a research/analysis tool, not a signal service. It is based on M8B versi
     
     # Symbol selection
     symbols = sorted(df['Symbol'].dropna().unique())
-    
-    # Check if preset was applied
-    if 'apply_butterfly_preset' not in st.session_state:
-        st.session_state['apply_butterfly_preset'] = False
-    
-    # Handle preset button click - set values before widgets render
-    preset_applied = st.session_state.get('apply_butterfly_preset')
-    if preset_applied:
-        st.session_state['symbol_select'] = 'SPX'
-        st.session_state['strategy_select'] = 'Butterfly'
-        st.session_state['apply_butterfly_preset'] = False
-    
-    # For first load (no preset, no existing session state), set the index to SPX
-    if 'symbol_select' not in st.session_state:
-        default_symbol_idx = symbols.index('SPX') if 'SPX' in symbols else 0
-        selected_symbol = st.sidebar.selectbox("Symbol", symbols, index=default_symbol_idx, key='symbol_select')
-    else:
-        selected_symbol = st.sidebar.selectbox("Symbol", symbols, key='symbol_select')
+    default_symbol_idx = symbols.index('SPX') if 'SPX' in symbols else 0
+    selected_symbol = st.sidebar.selectbox("Symbol", symbols, index=default_symbol_idx)
     
     # Strategy selection (filtered by symbol)
     df_symbol = df[df['Symbol'] == selected_symbol]
     names = sorted(df_symbol['Name'].dropna().unique())
-    
-    # If strategy_select exists but is not valid for current symbol, clear it
-    if 'strategy_select' in st.session_state and st.session_state['strategy_select'] not in names:
-        del st.session_state['strategy_select']
-    
-    # For first load (no preset, no existing session state), set the index to Vertical
-    if 'strategy_select' not in st.session_state:
-        default_name_idx = names.index('Vertical') if 'Vertical' in names else 0
-        selected_name = st.sidebar.selectbox("Strategy", names, index=default_name_idx, key='strategy_select')
-    else:
-        selected_name = st.sidebar.selectbox("Strategy", names, key='strategy_select')
-    
-    # Butterfly Preset button
-    if st.sidebar.button("🦋 Butterfly Preset", help="SPX Butterfly with optimized filters: Earnings, Premium>35, Month-end rebalancing"):
-        st.session_state['apply_butterfly_preset'] = True
-        st.session_state['preset_exclude_fomc'] = False
-        st.session_state['preset_exclude_earnings_e'] = True
-        st.session_state['preset_exclude_earnings_e1'] = True
-        st.session_state['preset_exclude_illiquid'] = False
-        st.session_state['preset_predict_distance'] = False
-        st.session_state['preset_skip_premium'] = True
-        st.session_state['preset_month_end'] = True
-        st.session_state['preset_t1'] = True
-        st.session_state['preset_t2'] = True
-        st.session_state['preset_qtr_only'] = False
-        st.session_state['preset_min_r2'] = 0.7
-        st.session_state['preset_max_lookback'] = 46
-        st.rerun()
+    default_name_idx = names.index('Vertical') if 'Vertical' in names else 0
+    selected_name = st.sidebar.selectbox("Strategy", names, index=default_name_idx)
     
     # Filter data
     filtered_df = df[(df['Symbol'] == selected_symbol) & (df['Name'] == selected_name)].copy()
@@ -1328,44 +1286,12 @@ This is a research/analysis tool, not a signal service. It is based on M8B versi
     earnings_dates = load_earnings_dates()
     earnings_plus1_dates = load_earnings_plus1_dates()
     
-    # Initialize checkbox states on first run
-    if 'exclude_fomc_cb' not in st.session_state:
-        st.session_state['exclude_fomc_cb'] = False
-    if 'exclude_earnings_e_cb' not in st.session_state:
-        st.session_state['exclude_earnings_e_cb'] = False
-    if 'exclude_earnings_e1_cb' not in st.session_state:
-        st.session_state['exclude_earnings_e1_cb'] = False
-    
-    # Apply preset values if set
-    if 'preset_exclude_fomc' in st.session_state:
-        st.session_state['exclude_fomc_cb'] = st.session_state.pop('preset_exclude_fomc')
-    if 'preset_exclude_earnings_e' in st.session_state:
-        st.session_state['exclude_earnings_e_cb'] = st.session_state.pop('preset_exclude_earnings_e')
-    if 'preset_exclude_earnings_e1' in st.session_state:
-        st.session_state['exclude_earnings_e1_cb'] = st.session_state.pop('preset_exclude_earnings_e1')
-    
     # FOMC filter
-    exclude_fomc = st.sidebar.checkbox("Exclude FOMC", help="FOMC announcement days", key='exclude_fomc_cb')
+    exclude_fomc = st.sidebar.checkbox("Exclude FOMC", value=False, help="FOMC announcement days")
     
     # Earnings filters - separate E and E+1
-    exclude_earnings_e = st.sidebar.checkbox("Exclude Earnings (E)", help="Major earnings announcement days", key='exclude_earnings_e_cb')
-    exclude_earnings_e1 = st.sidebar.checkbox("Exclude Earnings (E+1)", help="Day after major earnings", key='exclude_earnings_e1_cb')
-    
-    # Initialize butterfly preset checkbox states on first run
-    if 'exclude_illiquid_cb' not in st.session_state:
-        st.session_state['exclude_illiquid_cb'] = False
-    if 'predict_distance_cb' not in st.session_state:
-        st.session_state['predict_distance_cb'] = False
-    if 'skip_premium_cb' not in st.session_state:
-        st.session_state['skip_premium_cb'] = False
-    
-    # Apply butterfly preset values if set
-    if 'preset_exclude_illiquid' in st.session_state:
-        st.session_state['exclude_illiquid_cb'] = st.session_state.pop('preset_exclude_illiquid')
-    if 'preset_predict_distance' in st.session_state:
-        st.session_state['predict_distance_cb'] = st.session_state.pop('preset_predict_distance')
-    if 'preset_skip_premium' in st.session_state:
-        st.session_state['skip_premium_cb'] = st.session_state.pop('preset_skip_premium')
+    exclude_earnings_e = st.sidebar.checkbox("Exclude Earnings (E)", value=False, help="Major earnings announcement days")
+    exclude_earnings_e1 = st.sidebar.checkbox("Exclude Earnings (E+1)", value=False, help="Day after major earnings")
     
     # Butterfly Strike Liquidity filter - only show for Butterfly strategies
     exclude_illiquid_strikes = False
@@ -1376,13 +1302,13 @@ This is a research/analysis tool, not a signal service. It is based on M8B versi
     if 'Butterfly' in selected_name:
         exclude_illiquid_strikes = st.sidebar.checkbox(
             "Exclude Illiquid Strikes (25/40/65/80)", 
-            help="Exclude butterfly trades where center strike ends in 25, 40, 65, or 80",
-            key='exclude_illiquid_cb'
+            value=False,
+            help="Exclude butterfly trades where center strike ends in 25, 40, 65, or 80"
         )
         predict_distance_enabled = st.sidebar.checkbox(
             "Predict Distance Filter",
-            help="Exclude trades where |Center - Predicted| > threshold",
-            key='predict_distance_cb'
+            value=False,
+            help="Exclude trades where |Center - Predicted| > threshold"
         )
         if predict_distance_enabled:
             predict_distance_value = st.sidebar.number_input(
@@ -1396,36 +1322,16 @@ This is a research/analysis tool, not a signal service. It is based on M8B versi
             st.sidebar.caption(f"🔍 Active: |Center-Predicted| ≤ {predict_distance_value}")
         skip_high_premium = st.sidebar.checkbox(
             "Skip Premium > 35",
-            help="Exclude butterfly trades where Premium > 35",
-            key='skip_premium_cb'
+            value=False,
+            help="Exclude butterfly trades where Premium > 35"
         )
-    
-    # Initialize rebalancing checkbox states on first run
-    if 'month_end_cb' not in st.session_state:
-        st.session_state['month_end_cb'] = False
-    if 't1_cb' not in st.session_state:
-        st.session_state['t1_cb'] = False
-    if 't2_cb' not in st.session_state:
-        st.session_state['t2_cb'] = False
-    if 'qtr_only_cb' not in st.session_state:
-        st.session_state['qtr_only_cb'] = False
-    
-    # Apply rebalancing preset values if set
-    if 'preset_month_end' in st.session_state:
-        st.session_state['month_end_cb'] = st.session_state.pop('preset_month_end')
-    if 'preset_t1' in st.session_state:
-        st.session_state['t1_cb'] = st.session_state.pop('preset_t1')
-    if 'preset_t2' in st.session_state:
-        st.session_state['t2_cb'] = st.session_state.pop('preset_t2')
-    if 'preset_qtr_only' in st.session_state:
-        st.session_state['qtr_only_cb'] = st.session_state.pop('preset_qtr_only')
     
     # Institutional Rebalancing Filter (matching TTV)
     st.sidebar.markdown("**Institutional Rebalancing Filter**")
-    rebal_month_end = st.sidebar.checkbox("End of Month", help="Month-end trading day", key='month_end_cb')
-    rebal_t1 = st.sidebar.checkbox("First Prior Day (T-1)", help="One trading day before month-end", key='t1_cb')
-    rebal_t2 = st.sidebar.checkbox("Second Prior Day (T-2)", help="Two trading days before month-end", key='t2_cb')
-    rebal_qtr_only = st.sidebar.checkbox("Only Quarter End", help="Only exclude quarter-end dates (Mar, Jun, Sep, Dec)", key='qtr_only_cb')
+    rebal_month_end = st.sidebar.checkbox("End of Month", value=False, help="Month-end trading day")
+    rebal_t1 = st.sidebar.checkbox("First Prior Day (T-1)", value=False, help="One trading day before month-end")
+    rebal_t2 = st.sidebar.checkbox("Second Prior Day (T-2)", value=False, help="Two trading days before month-end")
+    rebal_qtr_only = st.sidebar.checkbox("Only Quarter End", value=False, help="Only exclude quarter-end dates (Mar, Jun, Sep, Dec)")
     
     # Build dates to exclude
     dates_to_exclude = set()
@@ -1471,25 +1377,13 @@ This is a research/analysis tool, not a signal service. It is based on M8B versi
     st.sidebar.markdown("---")
     st.sidebar.subheader("📈 Quality Filter")
     
-    # Initialize slider states on first run
-    if 'min_r2_slider' not in st.session_state:
-        st.session_state['min_r2_slider'] = 0.7
-    if 'max_lookback_slider' not in st.session_state:
-        st.session_state['max_lookback_slider'] = 40
-    
-    # Apply preset values if set
-    if 'preset_min_r2' in st.session_state:
-        st.session_state['min_r2_slider'] = st.session_state.pop('preset_min_r2')
-    if 'preset_max_lookback' in st.session_state:
-        st.session_state['max_lookback_slider'] = st.session_state.pop('preset_max_lookback')
-    
     # R² threshold slider
     min_r_squared = st.sidebar.slider(
         "Min R² (Equity Curve Consistency)",
         min_value=0.0,
         max_value=0.9,
+        value=0.7,
         step=0.1,
-        key='min_r2_slider',
         help="R² measures how consistently profits accumulate. Higher = smoother equity curve. "
              "0.0 = no filter, 0.5 = moderate, 0.7 = strict. "
              "Only lookback periods meeting this threshold will be considered."
@@ -1522,8 +1416,8 @@ This is a research/analysis tool, not a signal service. It is based on M8B versi
         "Max Lookback (weeks)",
         min_value=4,
         max_value=52,
+        value=40,
         step=2,
-        key='max_lookback_slider',
         help="Limit the maximum lookback period to test. Lower = faster analysis."
     )
     st.sidebar.caption(f"*Testing lookbacks: 2, 4, 6... up to {max_lookback} weeks*")
@@ -2154,17 +2048,10 @@ ALL day × lookback combos:
             min_date = tracker_df['Date'].min().date()
             max_date = tracker_df['Date'].max().date()
             
-            # Default start date to 2025/01/01 if data exists from that date
-            default_start = date(2025, 1, 1)
-            if default_start < min_date:
-                default_start = min_date
-            elif default_start > max_date:
-                default_start = min_date
-            
             with date_col1:
                 start_date = st.date_input(
                     "Start Date",
-                    value=default_start,
+                    value=min_date,
                     min_value=min_date,
                     max_value=max_date,
                     key="tracker_start_date"
