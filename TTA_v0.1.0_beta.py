@@ -1440,14 +1440,38 @@ def main():
         st.markdown("---")
         st.subheader("🎱 Weekly Potential Trades (Best Entry Time per Day)")
         
-        # Week selection toggle
-        week_selection = st.radio(
-            "Select Week:",
-            ["Next Week", "Current Week"],
-            horizontal=True,
-            key='week_selection',
-            help="Next Week uses all available data. Current Week uses data through previous Friday."
-        )
+        # Week selection and disclaimer in columns
+        week_col, disclaimer_col = st.columns([1, 2])
+        
+        with week_col:
+            # Week selection toggle
+            week_selection = st.radio(
+                "Select Week:",
+                ["Next Week", "Current Week"],
+                horizontal=True,
+                key='week_selection',
+                help="Next Week uses all available data. Current Week uses data through previous Friday."
+            )
+        
+        with disclaimer_col:
+            st.markdown("""
+            <div style="
+                background-color: #FFFF00 !important;
+                border: 2px solid #cc0000;
+                border-radius: 8px;
+                padding: 10px 15px;
+                margin-top: 5px;
+            ">
+                <span style="color: #cc0000 !important; font-size: 13px; font-weight: 500;">
+                    <strong style="color: #cc0000 !important;">Disclaimer:</strong> 
+                    This app is for educational purposes only. It does not provide investment advice, 
+                    and the options trades shown are not recommendations. Options trading involves 
+                    substantial risk and may result in the loss of all invested capital. Past performance 
+                    is not indicative of future results. Users are solely responsible for their trading decisions.
+                </span>
+            </div>
+            """, unsafe_allow_html=True)
+        
         week_offset = 0 if week_selection == "Current Week" else 1
         
         recommendations = get_week_recommendations(filtered_df, optimal_by_day, week_offset=week_offset)
