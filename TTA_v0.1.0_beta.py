@@ -1107,6 +1107,37 @@ def main():
     st.markdown("# 🎱 Time Trends Auto (TTA v0.1.0 beta) <span style='font-size: 18px; font-style: italic; color: blue;'>by jb-trader</span>", unsafe_allow_html=True)
     st.markdown("*TTA uses walk-forward analysis to automatically find the optimal lookback period for each day of the week, then presents the best entry time per day based on historical average profit.*")
     
+    # Important Read This expander - with light orange background
+    # Inject CSS to style just the first expander in the main area
+    st.markdown("""
+    <style>
+        /* Target first expander only - light orange background */
+        section.main div[data-testid="stExpander"]:nth-of-type(1) > details > summary {
+            background-color: #FFDAB9 !important;
+        }
+    </style>
+    """, unsafe_allow_html=True)
+    
+    with st.expander("⚠️ Important Read This  👇 CLICK HERE"):
+        st.markdown("""
+<div style="font-size: 14px;">
+
+**What TTA Does:**
+
+TTA is not designed to tell you when or what to trade. Instead, it provides analytical tools that you may choose to use to develop your own trade plan.
+
+Specifically, TTA:
+- Applies user-selected filters to exclude high-volatility days (FOMC, earnings, month-end rebalancing)
+- Automatically finds the optimal lookback period for each day of the week using walk-forward testing (out-of-sample validation, not backtesting)
+- Outputs one potential entry time per day based on historical average profit, filtered by equity curve smoothness (R²)
+
+**You decide** which filters to apply, what R² threshold is acceptable, and ultimately whether to incorporate any of this analysis into your trading decisions.
+
+This is a research/analysis tool, not a signal service. It is based on M8B version 1.37 log data.
+
+</div>
+        """, unsafe_allow_html=True)
+    
     with st.expander("ℹ️ About TTA - Key Features & How It Differs from TTD & TTV  👇 CLICK HERE"):
         st.markdown("""
 <div style="font-size: 14px;">
