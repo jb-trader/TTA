@@ -1269,7 +1269,7 @@ This is a research/analysis tool, not a signal service. It is based on M8B versi
     # Strategy selection (filtered by symbol)
     df_symbol = df[df['Symbol'] == selected_symbol]
     names = sorted(df_symbol['Name'].dropna().unique())
-    default_name_idx = names.index('Vertical') if 'Vertical' in names else 0
+    default_name_idx = names.index('Butterfly') if 'Butterfly' in names else 0
     selected_name = st.sidebar.selectbox("Strategy", names, index=default_name_idx)
     
     # Filter data
