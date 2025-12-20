@@ -1001,8 +1001,9 @@ def main():
     st.sidebar.markdown("**🎨 Theme**")
     theme = st.sidebar.radio("Mode", ["Light", "Dark"], index=0, horizontal=True, label_visibility="collapsed")
     
-    # PDF button placeholder - will be rendered after recommendations are generated
+    # PDF button placeholders - will be rendered after recommendations are generated
     pdf_button_placeholder = st.sidebar.empty()
+    print_button_placeholder = st.sidebar.empty()
     
     st.sidebar.markdown("---")
     
@@ -1378,6 +1379,10 @@ def main():
                 file_name=filename,
                 mime="application/pdf"
             )
+            
+            # Print button - triggers browser print dialog
+            if print_button_placeholder.button("🖨️ Print Trade Plan (PDF)"):
+                st.components.v1.html("<script>window.print();</script>", height=0)
             
             st.info(f"**Trading Week:** {target_monday:%B %d, %Y} - {target_friday:%B %d, %Y}")
             st.write(f"**Symbol:** {selected_symbol} | **Strategy:** {selected_name}")
