@@ -1013,6 +1013,64 @@ def main():
     st.sidebar.markdown("**🎨 Theme**")
     theme = st.sidebar.radio("Mode", ["Light", "Dark"], index=0, horizontal=True, label_visibility="collapsed")
     
+    # ========================================================================
+    # PRINT TRADE PLAN BUTTON
+    # ========================================================================
+    # Check if recommendations exist in session state
+    if 'recommendations' in st.session_state and st.session_state['recommendations'] is not None:
+        rec_data = st.session_state['recommendations']
+        pdf_bytes = generate_trade_plan_pdf(
+            week_type=rec_data['week_type'],
+            target_monday=rec_data['target_monday'],
+            target_friday=rec_data['target_friday'],
+            symbol=rec_data['symbol'],
+            strategy=rec_data['strategy'],
+            recommendations_df=rec_data['df']
+        )
+        pdf_base64 = base64.b64encode(pdf_bytes).decode('utf-8')
+        print_filename = f"TTA_TradePlan_{rec_data['symbol']}_{rec_data['target_monday']:%Y%m%d}.pdf"
+        
+        st.sidebar.markdown("")
+        
+        # Print Trade Plan button using JavaScript to open PDF in new window for printing
+        print_html = f'''
+        <style>
+            .print-btn {{
+                background-color: #4CAF50;
+                color: white !important;
+                padding: 10px 20px;
+                border: none;
+                border-radius: 5px;
+                cursor: pointer;
+                font-size: 14px;
+                font-weight: bold;
+                width: 100%;
+                text-align: center;
+                display: block;
+                text-decoration: none;
+            }}
+            .print-btn:hover {{
+                background-color: #45a049;
+            }}
+        </style>
+        <a href="data:application/pdf;base64,{pdf_base64}" 
+           target="_blank" 
+           class="print-btn"
+           download="{print_filename}"
+           onclick="
+               var win = window.open('', '_blank');
+               win.document.write('<html><head><title>TTA Trade Plan</title></head><body style=\\'margin:0\\'><embed width=\\'100%\\' height=\\'100%\\' src=\\'data:application/pdf;base64,{pdf_base64}\\' type=\\'application/pdf\\'></body></html>');
+               return false;
+           ">
+           🖨️ Print Trade Plan
+        </a>
+        '''
+        st.sidebar.markdown(print_html, unsafe_allow_html=True)
+        st.sidebar.caption(f"📄 {rec_data['week_type']}: {rec_data['target_monday']:%b %d} - {rec_data['target_friday']:%b %d}")
+    else:
+        st.sidebar.markdown("")
+        st.sidebar.button("🖨️ Print Trade Plan", disabled=True, use_container_width=True, help="Run analysis first to generate trade plan")
+    
     st.sidebar.markdown("---")
     
     # Apply theme CSS
@@ -1369,35 +1427,6 @@ def main():
                 'strategy': selected_name,
                 'df': recommendations.copy()
             }
-            
-            # Render PDF download button in sidebar placeholder
-            rec_data = st.session_state['recommendations']
-            pdf_bytes = generate_trade_plan_pdf(
-                week_type=rec_data['week_type'],
-                target_monday=rec_data['target_monday'],
-                target_friday=rec_data['target_friday'],
-                symbol=rec_data['symbol'],
-                strategy=rec_data['strategy'],
-                recommendations_df=rec_data['df']
-            )
-            # Print/Save PDF section - render directly in sidebar
-            pdf_base64 = base64.b64encode(pdf_bytes).decode('utf-8')
-            print_filename = f"TTA_TradePlan_{rec_data['symbol']}_{rec_data['target_monday']:%Y%m%d}.pdf"
-            
-            # Render PDF controls directly in sidebar
-            with st.sidebar:
-                st.download_button(
-                    label="📥 Save Trade Plan (PDF)",
-                    data=pdf_bytes,
-                    file_name=print_filename,
-                    mime="application/pdf",
-                    use_container_width=True
-                )
-                # Embed PDF viewer in an expander
-                with st.expander("🖨️ View/Print Trade Plan"):
-                    pdf_display = f'<iframe src="data:application/pdf;base64,{pdf_base64}" width="100%" height="400" type="application/pdf"></iframe>'
-                    st.markdown(pdf_display, unsafe_allow_html=True)
-                    st.caption("Use browser print (Ctrl+P) or right-click to print/save")
             
             st.info(f"**Trading Week:** {target_monday:%B %d, %Y} - {target_friday:%B %d, %Y}")
             st.write(f"**Symbol:** {selected_symbol} | **Strategy:** {selected_name}")
