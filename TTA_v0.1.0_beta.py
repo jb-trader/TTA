@@ -1016,19 +1016,47 @@ def main():
     # ========================================================================
     # PRINT TRADE PLAN BUTTON
     # ========================================================================
+    # Initialize week_selection in session state if not present
+    if 'week_selection' not in st.session_state:
+        st.session_state['week_selection'] = "Next Week"
+    
     # Check if recommendations exist in session state
     if 'recommendations' in st.session_state and st.session_state['recommendations'] is not None:
         rec_data = st.session_state['recommendations']
+        
+        # Use the CURRENT week selection from session state (not the stored one)
+        current_week_selection = st.session_state.get('week_selection', 'Next Week')
+        current_week_offset = 0 if current_week_selection == "Current Week" else 1
+        
+        # Recalculate target dates based on CURRENT selection
+        # Use the stored filtered_df to get max_date
+        if 'filtered_df' in st.session_state:
+            stored_df = st.session_state['filtered_df']
+            max_date = stored_df['Date'].max().date()
+            current_week_start = get_week_start(max_date)
+            
+            if current_week_offset == 0:
+                target_monday = current_week_start
+                target_friday = target_monday + timedelta(days=4)
+            else:
+                target_monday = current_week_start + timedelta(weeks=1)
+                target_friday = target_monday + timedelta(days=4)
+        else:
+            # Fallback to stored values
+            target_monday = rec_data['target_monday']
+            target_friday = rec_data['target_friday']
+            current_week_selection = rec_data['week_type']
+        
         pdf_bytes = generate_trade_plan_pdf(
-            week_type=rec_data['week_type'],
-            target_monday=rec_data['target_monday'],
-            target_friday=rec_data['target_friday'],
+            week_type=current_week_selection,
+            target_monday=target_monday,
+            target_friday=target_friday,
             symbol=rec_data['symbol'],
             strategy=rec_data['strategy'],
             recommendations_df=rec_data['df']
         )
         pdf_base64 = base64.b64encode(pdf_bytes).decode('utf-8')
-        print_filename = f"TTA_TradePlan_{rec_data['symbol']}_{rec_data['target_monday']:%Y%m%d}.pdf"
+        print_filename = f"TTA_TradePlan_{rec_data['symbol']}_{target_monday:%Y%m%d}.pdf"
         
         st.sidebar.markdown("")
         
@@ -1066,7 +1094,7 @@ def main():
         </a>
         '''
         st.sidebar.markdown(print_html, unsafe_allow_html=True)
-        st.sidebar.caption(f"📄 {rec_data['week_type']}: {rec_data['target_monday']:%b %d} - {rec_data['target_friday']:%b %d}")
+        st.sidebar.caption(f"📄 {current_week_selection}: {target_monday:%b %d} - {target_friday:%b %d}")
     else:
         st.sidebar.markdown("")
         st.sidebar.button("🖨️ Print Trade Plan", disabled=True, use_container_width=True, help="Run analysis first to generate trade plan")
@@ -1395,6 +1423,7 @@ def main():
             "Select Week:",
             ["Next Week", "Current Week"],
             horizontal=True,
+            key='week_selection',
             help="Next Week uses all available data. Current Week uses data through previous Friday."
         )
         week_offset = 0 if week_selection == "Current Week" else 1
