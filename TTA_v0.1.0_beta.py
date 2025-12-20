@@ -1013,9 +1013,6 @@ def main():
     st.sidebar.markdown("**🎨 Theme**")
     theme = st.sidebar.radio("Mode", ["Light", "Dark"], index=0, horizontal=True, label_visibility="collapsed")
     
-    # PDF button placeholders - will be rendered after recommendations are generated
-    print_button_placeholder = st.sidebar.empty()
-    
     st.sidebar.markdown("---")
     
     # Apply theme CSS
@@ -1383,14 +1380,24 @@ def main():
                 strategy=rec_data['strategy'],
                 recommendations_df=rec_data['df']
             )
-            # Print button - downloads PDF for printing/saving
+            # Print/Save PDF section - render directly in sidebar
+            pdf_base64 = base64.b64encode(pdf_bytes).decode('utf-8')
             print_filename = f"TTA_TradePlan_{rec_data['symbol']}_{rec_data['target_monday']:%Y%m%d}.pdf"
-            print_button_placeholder.download_button(
-                label="🖨️ Print Trade Plan (PDF)",
-                data=pdf_bytes,
-                file_name=print_filename,
-                mime="application/pdf"
-            )
+            
+            # Render PDF controls directly in sidebar
+            with st.sidebar:
+                st.download_button(
+                    label="📥 Save Trade Plan (PDF)",
+                    data=pdf_bytes,
+                    file_name=print_filename,
+                    mime="application/pdf",
+                    use_container_width=True
+                )
+                # Embed PDF viewer in an expander
+                with st.expander("🖨️ View/Print Trade Plan"):
+                    pdf_display = f'<iframe src="data:application/pdf;base64,{pdf_base64}" width="100%" height="400" type="application/pdf"></iframe>'
+                    st.markdown(pdf_display, unsafe_allow_html=True)
+                    st.caption("Use browser print (Ctrl+P) or right-click to print/save")
             
             st.info(f"**Trading Week:** {target_monday:%B %d, %Y} - {target_friday:%B %d, %Y}")
             st.write(f"**Symbol:** {selected_symbol} | **Strategy:** {selected_name}")
