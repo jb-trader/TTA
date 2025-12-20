@@ -1297,6 +1297,8 @@ This is a research/analysis tool, not a signal service. It is based on M8B versi
     exclude_illiquid_strikes = False
     predict_distance_enabled = False
     predict_distance_value = 18
+    skip_high_premium = False
+    skip_premium_threshold = 35
     if 'Butterfly' in selected_name:
         exclude_illiquid_strikes = st.sidebar.checkbox(
             "Exclude Illiquid Strikes (25/40/65/80)", 
@@ -1318,6 +1320,11 @@ This is a research/analysis tool, not a signal service. It is based on M8B versi
                 help="Include trades where |Center - Predicted| ≤ this value"
             )
             st.sidebar.caption(f"🔍 Active: |Center-Predicted| ≤ {predict_distance_value}")
+        skip_high_premium = st.sidebar.checkbox(
+            "Skip Premium > 35",
+            value=False,
+            help="Exclude butterfly trades where Premium > 35"
+        )
     
     # Institutional Rebalancing Filter (matching TTV)
     st.sidebar.markdown("**Institutional Rebalancing Filter**")
@@ -1362,6 +1369,10 @@ This is a research/analysis tool, not a signal service. It is based on M8B versi
             # Keep all non-butterfly trades and butterfly trades within distance
             keep_mask = ~mask_has_center | (mask_has_center & valid_distance)
             filtered_df = filtered_df[keep_mask]
+    
+    # Apply Premium filter (Butterfly only)
+    if skip_high_premium and 'Premium' in filtered_df.columns:
+        filtered_df = filtered_df[filtered_df['Premium'] <= skip_premium_threshold]
     
     st.sidebar.markdown("---")
     st.sidebar.subheader("📈 Quality Filter")
@@ -1425,6 +1436,7 @@ This is a research/analysis tool, not a signal service. It is based on M8B versi
         'exclude_illiquid_strikes': exclude_illiquid_strikes,
         'predict_distance_enabled': predict_distance_enabled,
         'predict_distance_value': predict_distance_value,
+        'skip_high_premium': skip_high_premium,
         'min_r_squared': min_r_squared,
         'max_lookback': max_lookback
     }
@@ -2017,7 +2029,9 @@ ALL day × lookback combos:
                             st.markdown("• Illiquid Strikes Excluded")
                         if predict_distance_enabled:
                             st.markdown(f"• Predict Distance ≤ {predict_distance_value}")
-                        if not exclude_illiquid_strikes and not predict_distance_enabled:
+                        if skip_high_premium:
+                            st.markdown(f"• Skip Premium > {skip_premium_threshold}")
+                        if not exclude_illiquid_strikes and not predict_distance_enabled and not skip_high_premium:
                             st.markdown("*None*")
                     else:
                         st.markdown("**Strategy:**")
@@ -2074,6 +2088,16 @@ ALL day × lookback combos:
                 win_rate = winning_trades / total_trades if total_trades > 0 else 0
                 avg_profit = total_profit / total_trades if total_trades > 0 else 0
                 
+                # Worst Day Loss (minimum single-day profit)
+                worst_day_loss = filtered_tracker['Profit'].min()
+                
+                # Maximum Drawdown calculation
+                cumulative = filtered_tracker['Accum_Profit']
+                running_max = cumulative.cummax()
+                drawdown = running_max - cumulative
+                max_drawdown = drawdown.max()
+                
+                # First row of metrics
                 metric_col1, metric_col2, metric_col3, metric_col4 = st.columns(4)
                 with metric_col1:
                     st.metric("Total Profit", f"${total_profit:,.0f}")
@@ -2083,6 +2107,17 @@ ALL day × lookback combos:
                     st.metric("Win Rate", f"{win_rate:.1%}")
                 with metric_col4:
                     st.metric("Avg Profit/Trade", f"${avg_profit:,.0f}")
+                
+                # Second row of metrics
+                metric_col5, metric_col6, metric_col7, metric_col8 = st.columns(4)
+                with metric_col5:
+                    st.metric("Worst Day Loss", f"${worst_day_loss:,.0f}")
+                with metric_col6:
+                    st.metric("Max Drawdown", f"${max_drawdown:,.0f}")
+                with metric_col7:
+                    st.empty()  # Placeholder for future metrics
+                with metric_col8:
+                    st.empty()  # Placeholder for future metrics
                 
                 # Equity Curve Chart
                 st.markdown("**Equity Curve:**")
@@ -2168,6 +2203,7 @@ ALL day × lookback combos:
                 if 'Butterfly' in selected_name:
                     export_df['Illiquid_Strikes_Excluded'] = 'Yes' if exclude_illiquid_strikes else 'No'
                     export_df['Predict_Distance'] = predict_distance_value if predict_distance_enabled else 'N/A'
+                    export_df['Skip_Premium_GT_35'] = 'Yes' if skip_high_premium else 'No'
                 
                 export_df['Min_R2'] = min_r_squared
                 export_df['Min_R2_Desc'] = get_r_squared_descriptor(min_r_squared) if min_r_squared > 0 else 'No filter'
