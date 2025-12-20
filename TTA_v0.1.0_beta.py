@@ -1388,7 +1388,10 @@ This is a research/analysis tool, not a signal service. It is based on M8B versi
     # Auto-run on first load (no previous results)
     first_load = 'summary_df' not in st.session_state
     
-    should_run = run_button or first_load or (auto_run and filters_changed and 'summary_df' in st.session_state)
+    # Check if triggered from warning button
+    triggered_from_warning = st.session_state.pop('trigger_run_from_warning', False)
+    
+    should_run = run_button or first_load or triggered_from_warning or (auto_run and filters_changed and 'summary_df' in st.session_state)
     
     if should_run:
         status_placeholder = st.empty()
@@ -1434,29 +1437,39 @@ This is a research/analysis tool, not a signal service. It is based on M8B versi
         # Check if filter settings have changed since last run (for warning)
         if 'last_run_filters' in st.session_state:
             if current_filters != st.session_state['last_run_filters'] and not auto_run:
+                # Flashing warning with clickable button
                 st.markdown("""
                 <style>
                     @keyframes flash {
                         0%, 50%, 100% { opacity: 1; }
                         25%, 75% { opacity: 0.4; }
                     }
-                    .flash-warning {
+                    .flash-warning-container {
                         animation: flash 1.5s infinite;
                         background-color: #fff3cd;
                         border: 2px solid #ffc107;
                         border-radius: 8px;
                         padding: 15px 20px;
                         margin: 10px 0;
+                        text-align: center;
+                    }
+                    .flash-warning-text {
                         font-size: 20px;
                         font-weight: bold;
                         color: #856404;
-                        text-align: center;
                     }
                 </style>
-                <div class="flash-warning">
-                    ⚠️ Filter settings have changed. Click <span style="color: #d63384;">Run Walk-Forward Analysis</span> to update displayed results.
+                <div class="flash-warning-container">
+                    <span class="flash-warning-text">⚠️ Filter settings have changed.</span>
                 </div>
                 """, unsafe_allow_html=True)
+                
+                # Clickable button to run analysis
+                col1, col2, col3 = st.columns([1, 2, 1])
+                with col2:
+                    if st.button("🚀 Click Here to Run Walk-Forward Analysis", type="primary", use_container_width=True, key="warning_run_button"):
+                        st.session_state['trigger_run_from_warning'] = True
+                        st.rerun()
         
         summary_df = st.session_state['summary_df']
         results_df = st.session_state['results_df']
