@@ -1133,7 +1133,7 @@ Specifically, TTA:
 
 **You decide** which filters to apply, what R² threshold is acceptable, and ultimately whether to incorporate any of this analysis into your trading decisions.
 
-This is a research/analysis tool, not a signal service. It is based on M8B version 1.37 log data.
+This is a research/analysis tool, not a signal service. It is based on M8B version 1.37 log data. 'Set it and forget it', no stop loss or profit target, i.e. let it go to expiration.
 
 </div>
         """, unsafe_allow_html=True)
@@ -1196,7 +1196,8 @@ This is a research/analysis tool, not a signal service. It is based on M8B versi
     # Strategy selection (filtered by symbol)
     df_symbol = df[df['Symbol'] == selected_symbol]
     names = sorted(df_symbol['Name'].dropna().unique())
-    selected_name = st.sidebar.selectbox("Strategy", names, index=0)
+    default_name_idx = names.index('Vertical') if 'Vertical' in names else 0
+    selected_name = st.sidebar.selectbox("Strategy", names, index=default_name_idx)
     
     # Filter data
     filtered_df = df[(df['Symbol'] == selected_symbol) & (df['Name'] == selected_name)].copy()
@@ -1213,11 +1214,11 @@ This is a research/analysis tool, not a signal service. It is based on M8B versi
     earnings_plus1_dates = load_earnings_plus1_dates()
     
     # FOMC filter
-    exclude_fomc = st.sidebar.checkbox("Exclude FOMC", value=True, help="FOMC announcement days")
+    exclude_fomc = st.sidebar.checkbox("Exclude FOMC", value=False, help="FOMC announcement days")
     
     # Earnings filters - separate E and E+1
-    exclude_earnings_e = st.sidebar.checkbox("Exclude Earnings (E)", value=True, help="Major earnings announcement days")
-    exclude_earnings_e1 = st.sidebar.checkbox("Exclude Earnings (E+1)", value=True, help="Day after major earnings")
+    exclude_earnings_e = st.sidebar.checkbox("Exclude Earnings (E)", value=False, help="Major earnings announcement days")
+    exclude_earnings_e1 = st.sidebar.checkbox("Exclude Earnings (E+1)", value=False, help="Day after major earnings")
     
     # Butterfly Strike Liquidity filter - only show for Butterfly strategies
     exclude_illiquid_strikes = False
@@ -1226,7 +1227,7 @@ This is a research/analysis tool, not a signal service. It is based on M8B versi
     if 'Butterfly' in selected_name:
         exclude_illiquid_strikes = st.sidebar.checkbox(
             "Exclude Illiquid Strikes (25/40/65/80)", 
-            value=True,
+            value=False,
             help="Exclude butterfly trades where center strike ends in 25, 40, 65, or 80"
         )
         predict_distance_enabled = st.sidebar.checkbox(
@@ -1247,8 +1248,8 @@ This is a research/analysis tool, not a signal service. It is based on M8B versi
     
     # Institutional Rebalancing Filter (matching TTV)
     st.sidebar.markdown("**Institutional Rebalancing Filter**")
-    rebal_month_end = st.sidebar.checkbox("End of Month", value=True, help="Month-end trading day")
-    rebal_t1 = st.sidebar.checkbox("First Prior Day (T-1)", value=True, help="One trading day before month-end")
+    rebal_month_end = st.sidebar.checkbox("End of Month", value=False, help="Month-end trading day")
+    rebal_t1 = st.sidebar.checkbox("First Prior Day (T-1)", value=False, help="One trading day before month-end")
     rebal_t2 = st.sidebar.checkbox("Second Prior Day (T-2)", value=False, help="Two trading days before month-end")
     rebal_qtr_only = st.sidebar.checkbox("Only Quarter End", value=False, help="Only exclude quarter-end dates (Mar, Jun, Sep, Dec)")
     
