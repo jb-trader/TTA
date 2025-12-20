@@ -1287,7 +1287,7 @@ This is a research/analysis tool, not a signal service. It is based on M8B versi
     earnings_plus1_dates = load_earnings_plus1_dates()
     
     # FOMC filter
-    exclude_fomc = st.sidebar.checkbox("Exclude FOMC", value=False, help="FOMC announcement days")
+    exclude_fomc = st.sidebar.checkbox("Exclude FOMC", value=True, help="FOMC announcement days")
     
     # Earnings filters - separate E and E+1
     exclude_earnings_e = st.sidebar.checkbox("Exclude Earnings (E)", value=True, help="Major earnings announcement days")
@@ -1475,23 +1475,25 @@ This is a research/analysis tool, not a signal service. It is based on M8B versi
     
     # Check if triggered from warning button
     triggered_from_warning = st.session_state.pop('trigger_run_from_warning', False)
+    show_rerun_status = st.session_state.pop('show_rerun_status', False)
     
     should_run = run_button or first_load or triggered_from_warning or (auto_run and filters_changed and 'summary_df' in st.session_state)
     
     if should_run:
-        status_placeholder = st.empty()
-        status_placeholder.subheader("⏳ Running Walk-Forward Analysis...")
-        progress_bar = st.progress(0)
+        # Different status message if triggered from Rerun button
+        status_label = "🔄 Rerunning Analysis with Updated Filters..." if triggered_from_warning else "🔄 Running Walk-Forward Analysis..."
         
-        result = run_walk_forward_analysis(
-            filtered_df, 
-            progress_bar=progress_bar,
-            max_lookback=max_lookback
-        )
-        
-        # Clear the status message and progress bar
-        status_placeholder.empty()
-        progress_bar.empty()
+        with st.status(status_label, expanded=True) as status:
+            st.write("Processing data and computing optimal lookbacks...")
+            progress_bar = st.progress(0)
+            
+            result = run_walk_forward_analysis(
+                filtered_df, 
+                progress_bar=progress_bar,
+                max_lookback=max_lookback
+            )
+            
+            status.update(label="✅ Analysis Complete!", state="complete", expanded=False)
         
         if result[0] is None:
             st.error("Analysis failed. Check data availability.")
@@ -2048,10 +2050,15 @@ ALL day × lookback combos:
             min_date = tracker_df['Date'].min().date()
             max_date = tracker_df['Date'].max().date()
             
+            # Default start date to 2025-01-01 if data goes back that far
+            from datetime import date as date_type
+            default_start = date_type(2025, 1, 1)
+            default_start = max(min_date, default_start)  # Use later of min_date or 2025-01-01
+            
             with date_col1:
                 start_date = st.date_input(
                     "Start Date",
-                    value=min_date,
+                    value=default_start,
                     min_value=min_date,
                     max_value=max_date,
                     key="tracker_start_date"
@@ -2116,7 +2123,9 @@ ALL day × lookback combos:
                     # Show rerun button if filters have changed and auto-run is off
                     if 'last_run_filters' in st.session_state and current_filters != st.session_state['last_run_filters'] and not auto_run:
                         if st.button("🔄 Rerun Analysis", type="primary", key="tracker_rerun_button"):
+                            st.toast("🔄 Rerunning analysis with new filters...", icon="⏳")
                             st.session_state['trigger_run_from_warning'] = True
+                            st.session_state['show_rerun_status'] = True
                             st.rerun()
                 with metric_col8:
                     pass
