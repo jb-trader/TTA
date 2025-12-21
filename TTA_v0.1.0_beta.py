@@ -1287,7 +1287,7 @@ This is a research/analysis tool, not a signal service. It is based on M8B versi
     earnings_plus1_dates = load_earnings_plus1_dates()
     
     # FOMC filter
-    exclude_fomc = st.sidebar.checkbox("Exclude FOMC", value=True, help="FOMC announcement days")
+    exclude_fomc = st.sidebar.checkbox("Exclude FOMC", value=False, help="FOMC announcement days")
     
     # Earnings filters - separate E and E+1
     exclude_earnings_e = st.sidebar.checkbox("Exclude Earnings (E)", value=True, help="Major earnings announcement days")
