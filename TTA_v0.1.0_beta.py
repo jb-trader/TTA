@@ -1527,8 +1527,6 @@ This is a research/analysis tool, not a signal service. It is based on M8B versi
                     max_lookback=max_lookback
                 )
                 
-                status.update(label="✅ Analysis Complete!", state="complete", expanded=False)
-        
         if result[0] is None:
             st.error("Analysis failed. Check data availability.")
             return
