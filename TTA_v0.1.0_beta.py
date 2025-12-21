@@ -1513,12 +1513,12 @@ This is a research/analysis tool, not a signal service. It is based on M8B versi
     
     if should_run:
         # Different status message if triggered from Rerun button
-        status_label = "🔄 Rerunning Analysis with Updated Filters..." if triggered_from_warning else "🔄 Running Walk-Forward Analysis..."
         spinner_msg = "One moment while I recalculate..." if triggered_from_warning else "Running walk-forward analysis..."
         
-        with st.spinner(spinner_msg):
-            with st.status(status_label, expanded=True) as status:
-                st.write("Processing data and computing optimal lookbacks...")
+        # Use empty container so status disappears after completion
+        status_container = st.empty()
+        with status_container.container():
+            with st.spinner(spinner_msg):
                 progress_bar = st.progress(0)
                 
                 result = run_walk_forward_analysis(
@@ -1526,6 +1526,9 @@ This is a research/analysis tool, not a signal service. It is based on M8B versi
                     progress_bar=progress_bar,
                     max_lookback=max_lookback
                 )
+        
+        # Clear the status container after completion
+        status_container.empty()
                 
         if result[0] is None:
             st.error("Analysis failed. Check data availability.")
