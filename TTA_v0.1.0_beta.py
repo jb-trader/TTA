@@ -373,6 +373,38 @@ def get_theme_css(theme):
             color: #cc0000 !important;
             background-color: yellow !important;
         }}
+        
+        /* ========================================
+           CENTERED SPINNER OVERLAY
+           ======================================== */
+        .stSpinner {{
+            position: fixed !important;
+            top: 50% !important;
+            left: 50% !important;
+            transform: translate(-50%, -50%) !important;
+            z-index: 9999 !important;
+            background-color: rgba(255, 255, 255, 0.95) !important;
+            padding: 30px 50px !important;
+            border-radius: 12px !important;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15) !important;
+        }}
+        .stSpinner > div {{
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: center !important;
+            gap: 15px !important;
+        }}
+        .stSpinner > div > div:first-child {{
+            /* The spinner icon */
+            width: 40px !important;
+            height: 40px !important;
+        }}
+        .stSpinner > div > div:last-child {{
+            /* The text */
+            font-size: 16px !important;
+            font-weight: 500 !important;
+            color: #333 !important;
+        }}
     </style>
     """
 
@@ -1482,18 +1514,20 @@ This is a research/analysis tool, not a signal service. It is based on M8B versi
     if should_run:
         # Different status message if triggered from Rerun button
         status_label = "🔄 Rerunning Analysis with Updated Filters..." if triggered_from_warning else "🔄 Running Walk-Forward Analysis..."
+        spinner_msg = "One moment while I recalculate..." if triggered_from_warning else "Running walk-forward analysis..."
         
-        with st.status(status_label, expanded=True) as status:
-            st.write("Processing data and computing optimal lookbacks...")
-            progress_bar = st.progress(0)
-            
-            result = run_walk_forward_analysis(
-                filtered_df, 
-                progress_bar=progress_bar,
-                max_lookback=max_lookback
-            )
-            
-            status.update(label="✅ Analysis Complete!", state="complete", expanded=False)
+        with st.spinner(spinner_msg):
+            with st.status(status_label, expanded=True) as status:
+                st.write("Processing data and computing optimal lookbacks...")
+                progress_bar = st.progress(0)
+                
+                result = run_walk_forward_analysis(
+                    filtered_df, 
+                    progress_bar=progress_bar,
+                    max_lookback=max_lookback
+                )
+                
+                status.update(label="✅ Analysis Complete!", state="complete", expanded=False)
         
         if result[0] is None:
             st.error("Analysis failed. Check data availability.")
