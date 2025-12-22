@@ -1,1 +1,1 @@
-web: streamlit run TTA_v0.1.0_beta.py --server.port $PORT --server.address 0.0.0.0 --server.headless true
+web: streamlit run TTA_v1_0.py --server.port $PORT
