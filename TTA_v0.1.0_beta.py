@@ -631,6 +631,19 @@ def get_week_end(date):
     return get_week_start(date) + timedelta(days=4)
 
 
+def get_display_week_start():
+    """
+    Get the Monday that defines 'current week' for display and analysis.
+    On Sunday, returns tomorrow (Monday), causing the week to flip on Sunday.
+    On Monday-Saturday, returns the Monday of the current week.
+    """
+    today = datetime.now().date()
+    if today.weekday() == 6:  # Sunday
+        return today + timedelta(days=1)  # Tomorrow is Monday
+    else:
+        return get_week_start(today)
+
+
 def get_all_weeks(df):
     """Get all unique week start dates (Mondays) in the dataset."""
     df = df.copy()
@@ -1002,9 +1015,10 @@ def get_week_recommendations(df, optimal_by_day, week_offset=1):
         week_offset: 0 = current week, 1 = next week (default)
     
     For each day, use its optimal lookback to find the single best Entry_Time.
+    Week transitions on Sunday based on calendar date.
     """
     max_date = df['Date'].max().date()
-    current_week_start = get_week_start(max_date)
+    current_week_start = get_display_week_start()  # Calendar-based, flips on Sunday
     
     # Adjust the reference point based on week_offset
     if week_offset == 0:
@@ -1617,7 +1631,7 @@ This is a research/analysis tool, not a signal service. It is based on M8B versi
                 ["Next Week", "Current Week"],
                 horizontal=True,
                 key='week_selection',
-                help="Next Week uses all available data. Current Week uses data through previous Friday."
+                help="Week transitions on Sunday. Next Week uses all available data. Current Week uses data through previous Friday."
             )
         
         with disclaimer_col:
@@ -1649,9 +1663,8 @@ This is a research/analysis tool, not a signal service. It is based on M8B versi
             st.warning("No slots meet the criteria for weekly potentials.")
             st.session_state['recommendations'] = None
         else:
-            # Calculate target week dates
-            max_date = filtered_df['Date'].max().date()
-            current_week_start = get_week_start(max_date)
+            # Calculate target week dates (calendar-based, flips on Sunday)
+            current_week_start = get_display_week_start()
             
             if week_offset == 0:
                 # Current week
