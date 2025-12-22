@@ -2098,54 +2098,70 @@ ALL day × lookback combos:
             min_date = tracker_df['Date'].min().date()
             max_date = tracker_df['Date'].max().date()
             
-            # Default start date to 2025-01-01 if data goes back that far
             from datetime import date as date_type
-            default_start = date_type(2025, 1, 1)
-            default_start = max(min_date, default_start)  # Use later of min_date or 2025-01-01
             
-            # Initialize session state for date inputs if not present
-            if 'tracker_start_date_value' not in st.session_state:
-                st.session_state['tracker_start_date_value'] = default_start
-            if 'tracker_end_date_value' not in st.session_state:
-                st.session_state['tracker_end_date_value'] = max_date
+            # Initialize session state for date inputs if not present (default to full range)
+            if 'tracker_start_date' not in st.session_state:
+                st.session_state['tracker_start_date'] = min_date
+            if 'tracker_end_date' not in st.session_state:
+                st.session_state['tracker_end_date'] = max_date
+            if 'selected_year' not in st.session_state:
+                st.session_state['selected_year'] = None
+            
+            # Handle year button clicks BEFORE rendering widgets
+            # Check for button clicks from previous run
+            if st.session_state.get('year_btn_clicked'):
+                year = st.session_state['year_btn_clicked']
+                st.session_state['tracker_start_date'] = max(min_date, date_type(year, 1, 1))
+                st.session_state['tracker_end_date'] = min(max_date, date_type(year, 12, 31))
+                st.session_state['selected_year'] = year
+                st.session_state['year_btn_clicked'] = None
             
             with date_col1:
                 start_date = st.date_input(
                     "Start Date",
-                    value=st.session_state['tracker_start_date_value'],
+                    value=st.session_state['tracker_start_date'],
                     min_value=min_date,
                     max_value=max_date,
-                    key="tracker_start_date"
+                    key="tracker_start_input"
                 )
-                st.session_state['tracker_start_date_value'] = start_date
+                # Update session state if user manually changed date
+                if start_date != st.session_state['tracker_start_date']:
+                    st.session_state['tracker_start_date'] = start_date
+                    st.session_state['selected_year'] = None  # Clear year selection on manual change
             
             with date_col2:
                 end_date = st.date_input(
                     "End Date",
-                    value=st.session_state['tracker_end_date_value'],
+                    value=st.session_state['tracker_end_date'],
                     min_value=min_date,
                     max_value=max_date,
-                    key="tracker_end_date"
+                    key="tracker_end_input"
                 )
-                st.session_state['tracker_end_date_value'] = end_date
+                # Update session state if user manually changed date
+                if end_date != st.session_state['tracker_end_date']:
+                    st.session_state['tracker_end_date'] = end_date
+                    st.session_state['selected_year'] = None  # Clear year selection on manual change
             
             with date_col3:
                 st.markdown("**Quick Select:**")
                 btn_col1, btn_col2, btn_col3 = st.columns(3)
+                selected_year = st.session_state.get('selected_year')
+                
                 with btn_col1:
-                    if st.button("2024", key="year_2024_btn", use_container_width=True):
-                        st.session_state['tracker_start_date_value'] = max(min_date, date_type(2024, 1, 1))
-                        st.session_state['tracker_end_date_value'] = min(max_date, date_type(2024, 12, 31))
+                    btn_type_2024 = "primary" if selected_year == 2024 else "secondary"
+                    if st.button("2024", key="year_2024_btn", use_container_width=True, type=btn_type_2024):
+                        st.session_state['year_btn_clicked'] = 2024
                         st.rerun()
                 with btn_col2:
-                    if st.button("2025", key="year_2025_btn", use_container_width=True):
-                        st.session_state['tracker_start_date_value'] = max(min_date, date_type(2025, 1, 1))
-                        st.session_state['tracker_end_date_value'] = min(max_date, date_type(2025, 12, 31))
+                    btn_type_2025 = "primary" if selected_year == 2025 else "secondary"
+                    if st.button("2025", key="year_2025_btn", use_container_width=True, type=btn_type_2025):
+                        st.session_state['year_btn_clicked'] = 2025
                         st.rerun()
                 with btn_col3:
-                    if st.button("2026", key="year_2026_btn", use_container_width=True):
-                        st.session_state['tracker_start_date_value'] = max(min_date, date_type(2026, 1, 1))
-                        st.session_state['tracker_end_date_value'] = min(max_date, date_type(2026, 12, 31))
+                    btn_type_2026 = "primary" if selected_year == 2026 else "secondary"
+                    if st.button("2026", key="year_2026_btn", use_container_width=True, type=btn_type_2026):
+                        st.session_state['year_btn_clicked'] = 2026
                         st.rerun()
             
             # Filter by date range
