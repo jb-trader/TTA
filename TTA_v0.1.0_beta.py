@@ -405,6 +405,24 @@ def get_theme_css(theme):
             font-weight: 500 !important;
             color: #333 !important;
         }}
+        
+        /* ========================================
+           PRIMARY BUTTON - GREEN COLOR
+           ======================================== */
+        button[data-testid="stBaseButton-primary"] {{
+            background-color: #28a745 !important;
+            border-color: #28a745 !important;
+            color: white !important;
+        }}
+        button[data-testid="stBaseButton-primary"]:hover {{
+            background-color: #218838 !important;
+            border-color: #1e7e34 !important;
+        }}
+        button[data-testid="stBaseButton-primary"]:focus {{
+            background-color: #218838 !important;
+            border-color: #1e7e34 !important;
+            box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.5) !important;
+        }}
     </style>
     """
 
@@ -1129,14 +1147,14 @@ def main():
     # ========================================================================
     # Initialize week_selection in session state if not present
     if 'week_selection' not in st.session_state:
-        st.session_state['week_selection'] = "Next Week"
+        st.session_state['week_selection'] = "Current Week"
     
     # Check if recommendations exist in session state
     if 'recommendations' in st.session_state and st.session_state['recommendations'] is not None:
         rec_data = st.session_state['recommendations']
         
         # Use the CURRENT week selection from session state (not the stored one)
-        current_week_selection = st.session_state.get('week_selection', 'Next Week')
+        current_week_selection = st.session_state.get('week_selection', 'Current Week')
         current_week_offset = 0 if current_week_selection == "Current Week" else 1
         
         # Recalculate target dates based on CURRENT selection
@@ -1628,7 +1646,7 @@ This is a research/analysis tool, not a signal service. It is based on M8B versi
             # Week selection toggle
             week_selection = st.radio(
                 "Select Week:",
-                ["Next Week", "Current Week"],
+                ["Current Week", "Next Week"],
                 horizontal=True,
                 key='week_selection',
                 help="Week transitions on Sunday. Next Week uses all available data. Current Week uses data through previous Friday."
@@ -2100,6 +2118,9 @@ ALL day × lookback combos:
             
             from datetime import date as date_type
             
+            # Determine which years have data
+            years_with_data = sorted(tracker_df['Date'].dt.year.unique())
+            
             # Initialize session state BEFORE widgets are created (only on first run)
             if 'tracker_start_input' not in st.session_state:
                 st.session_state['tracker_start_input'] = min_date
@@ -2139,21 +2160,15 @@ ALL day × lookback combos:
             
             with date_col3:
                 st.markdown("**Quick Select:**")
-                btn_col1, btn_col2, btn_col3 = st.columns(3)
                 selected_year = st.session_state.get('selected_year')
                 
-                with btn_col1:
-                    btn_type_2024 = "primary" if selected_year == 2024 else "secondary"
-                    st.button("2024", key="year_2024_btn", use_container_width=True, 
-                             type=btn_type_2024, on_click=select_year, args=(2024,))
-                with btn_col2:
-                    btn_type_2025 = "primary" if selected_year == 2025 else "secondary"
-                    st.button("2025", key="year_2025_btn", use_container_width=True, 
-                             type=btn_type_2025, on_click=select_year, args=(2025,))
-                with btn_col3:
-                    btn_type_2026 = "primary" if selected_year == 2026 else "secondary"
-                    st.button("2026", key="year_2026_btn", use_container_width=True, 
-                             type=btn_type_2026, on_click=select_year, args=(2026,))
+                # Only show buttons for years that have data
+                btn_cols = st.columns(len(years_with_data))
+                for i, year in enumerate(years_with_data):
+                    with btn_cols[i]:
+                        btn_type = "primary" if selected_year == year else "secondary"
+                        st.button(str(year), key=f"year_{year}_btn", use_container_width=True, 
+                                 type=btn_type, on_click=select_year, args=(year,))
             
             # Filter by date range
             filtered_tracker = tracker_df[
