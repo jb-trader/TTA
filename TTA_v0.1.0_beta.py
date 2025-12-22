@@ -2061,7 +2061,7 @@ ALL day × lookback combos:
             st.warning("No performance data available for the current filter settings.")
         else:
             # Settings summary at top
-            with st.expander("⚙️ Current Filter Settings", expanded=False):
+            with st.expander("⚙️ Current Filter Settings", expanded=True):
                 settings_col1, settings_col2, settings_col3 = st.columns(3)
                 
                 with settings_col1:
