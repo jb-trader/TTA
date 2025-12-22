@@ -2300,16 +2300,16 @@ ALL day × lookback combos:
                 # Results Table
                 st.markdown("**Trade History:**")
                 
-                # Format display table
+                # Format display table - sort by date descending (most recent first)
                 display_tracker = filtered_tracker.copy()
+                display_tracker = display_tracker.sort_values('Date', ascending=False).reset_index(drop=True)
                 display_tracker['Date'] = display_tracker['Date'].dt.strftime('%Y-%m-%d')
                 display_tracker['Profit'] = display_tracker['Profit'].apply(lambda x: f"${x:,.0f}")
                 display_tracker['Accum_Profit'] = display_tracker['Accum_Profit'].apply(lambda x: f"${x:,.0f}")
-                display_tracker['Lookback'] = display_tracker['Lookback'].apply(lambda x: f"{x} wks")
                 
-                display_cols = ['Date', 'Day', 'Entry_Time', 'Profit', 'Accum_Profit', 'Lookback']
+                display_cols = ['Date', 'Day', 'Entry_Time', 'Profit', 'Accum_Profit']
                 display_tracker = display_tracker[display_cols]
-                display_tracker.columns = ['Date', 'Day', 'Entry Time', 'Profit', 'Accum Profit', 'Lookback']
+                display_tracker.columns = ['Date', 'Day', 'Entry Time', 'Profit', 'Accum Profit']
                 
                 # Show table with scrolling
                 st.dataframe(display_tracker, use_container_width=True, height=400)
