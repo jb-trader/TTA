@@ -387,12 +387,20 @@ def get_theme_css(theme):
             padding: 30px 50px !important;
             border-radius: 12px !important;
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15) !important;
+            color: #000000 !important;
+            -webkit-text-fill-color: #000000 !important;
+        }}
+        .stSpinner * {{
+            color: #000000 !important;
+            -webkit-text-fill-color: #000000 !important;
         }}
         .stSpinner > div {{
             display: flex !important;
             flex-direction: column !important;
             align-items: center !important;
             gap: 15px !important;
+            color: #000000 !important;
+            -webkit-text-fill-color: #000000 !important;
         }}
         .stSpinner > div > div:first-child {{
             /* The spinner icon */
@@ -403,7 +411,49 @@ def get_theme_css(theme):
             /* The text */
             font-size: 16px !important;
             font-weight: 500 !important;
-            color: #333 !important;
+            color: #000000 !important;
+            -webkit-text-fill-color: #000000 !important;
+        }}
+        .stSpinner p, .stSpinner span, .stSpinner div {{
+            color: #000000 !important;
+            -webkit-text-fill-color: #000000 !important;
+        }}
+        /* Additional spinner selectors for Streamlit dark mode */
+        [data-testid="stStatusWidget"] {{
+            color: #000000 !important;
+        }}
+        [data-testid="stStatusWidget"] * {{
+            color: #000000 !important;
+        }}
+        .stStatusWidget {{
+            color: #000000 !important;
+        }}
+        .stStatusWidget * {{
+            color: #000000 !important;
+        }}
+        /* Ultra-specific spinner selectors with stApp root */
+        .stApp .stSpinner {{
+            color: #000000 !important;
+        }}
+        .stApp .stSpinner * {{
+            color: #000000 !important;
+        }}
+        html body .stSpinner * {{
+            color: #000000 !important;
+        }}
+        /* Target Streamlit's theme attributes for spinner */
+        [data-theme="dark"] .stSpinner * {{
+            color: #000000 !important;
+        }}
+        [data-baseweb] .stSpinner * {{
+            color: #000000 !important;
+        }}
+        /* Target any element inside spinner-like containers */
+        div[class*="Spinner"] * {{
+            color: #000000 !important;
+        }}
+        div[class*="spinner"] * {{
+            color: #000000 !important;
         }}
         
         /* ========================================
@@ -464,11 +514,67 @@ def get_theme_css(theme):
            ======================================== */
         .flash-warning-text {{
             color: #000000 !important;
+            -webkit-text-fill-color: #000000 !important;
         }}
         .flash-warning-container {{
             color: #000000 !important;
+            -webkit-text-fill-color: #000000 !important;
         }}
         .flash-warning-container * {{
+            color: #000000 !important;
+            -webkit-text-fill-color: #000000 !important;
+        }}
+        .warning-text-black {{
+            color: #000000 !important;
+            -webkit-text-fill-color: #000000 !important;
+        }}
+        /* More specific selectors for Streamlit dark mode override */
+        .stMarkdown .flash-warning-container {{
+            color: #000000 !important;
+        }}
+        .stMarkdown .flash-warning-container span {{
+            color: #000000 !important;
+        }}
+        .stMarkdown .warning-text-black {{
+            color: #000000 !important;
+        }}
+        div[data-testid="stMarkdownContainer"] .flash-warning-container {{
+            color: #000000 !important;
+        }}
+        div[data-testid="stMarkdownContainer"] .flash-warning-container * {{
+            color: #000000 !important;
+        }}
+        /* Ultra-specific selectors with stApp root */
+        .stApp .flash-warning-container {{
+            color: #000000 !important;
+        }}
+        .stApp .flash-warning-container span {{
+            color: #000000 !important;
+        }}
+        .stApp .flash-warning-container * {{
+            color: #000000 !important;
+        }}
+        .stApp .warning-text-black {{
+            color: #000000 !important;
+        }}
+        html body .flash-warning-container * {{
+            color: #000000 !important;
+        }}
+        /* Target Streamlit's theme attributes */
+        [data-theme="dark"] .flash-warning-container * {{
+            color: #000000 !important;
+        }}
+        [data-baseweb] .flash-warning-container * {{
+            color: #000000 !important;
+        }}
+        /* Inline style backup - use element attribute selector */
+        span[class*="warning"] {{
+            color: #000000 !important;
+        }}
+        div[class*="flash-warning"] {{
+            color: #000000 !important;
+        }}
+        div[class*="flash-warning"] * {{
             color: #000000 !important;
         }}
     </style>
@@ -1654,10 +1760,26 @@ This is a research/analysis tool, not a signal service. It is based on M8B versi
                         padding: 15px 20px;
                         margin: 10px 0;
                         text-align: center;
+                        color: #000000 !important;
+                        -webkit-text-fill-color: #000000 !important;
+                    }
+                    .flash-warning-container * {
+                        color: #000000 !important;
+                        -webkit-text-fill-color: #000000 !important;
+                    }
+                    .flash-warning-container span {
+                        color: #000000 !important;
+                        -webkit-text-fill-color: #000000 !important;
+                    }
+                    .warning-text-black {
+                        font-size: 20px !important;
+                        font-weight: bold !important;
+                        color: #000000 !important;
+                        -webkit-text-fill-color: #000000 !important;
                     }
                 </style>
                 <div class="flash-warning-container">
-                    <span style="font-size: 20px; font-weight: bold; color: #000000 !important;">⚠️ Filter settings have changed.</span>
+                    <span class="warning-text-black" style="color: #000000 !important; -webkit-text-fill-color: #000000 !important;">⚠️ Filter settings have changed.</span>
                 </div>
                 """, unsafe_allow_html=True)
                 
@@ -2341,7 +2463,7 @@ ALL day × lookback combos:
                     ),
                     xaxis_title="Date",
                     yaxis_title="Cumulative Profit ($)",
-                    height=400,
+                    height=800,
                     hovermode='x unified',
                     plot_bgcolor=chart_bg,
                     paper_bgcolor=chart_bg,
