@@ -2103,23 +2103,50 @@ ALL day × lookback combos:
             default_start = date_type(2025, 1, 1)
             default_start = max(min_date, default_start)  # Use later of min_date or 2025-01-01
             
+            # Initialize session state for date inputs if not present
+            if 'tracker_start_date_value' not in st.session_state:
+                st.session_state['tracker_start_date_value'] = default_start
+            if 'tracker_end_date_value' not in st.session_state:
+                st.session_state['tracker_end_date_value'] = max_date
+            
             with date_col1:
                 start_date = st.date_input(
                     "Start Date",
-                    value=default_start,
+                    value=st.session_state['tracker_start_date_value'],
                     min_value=min_date,
                     max_value=max_date,
                     key="tracker_start_date"
                 )
+                st.session_state['tracker_start_date_value'] = start_date
             
             with date_col2:
                 end_date = st.date_input(
                     "End Date",
-                    value=max_date,
+                    value=st.session_state['tracker_end_date_value'],
                     min_value=min_date,
                     max_value=max_date,
                     key="tracker_end_date"
                 )
+                st.session_state['tracker_end_date_value'] = end_date
+            
+            with date_col3:
+                st.markdown("**Quick Select:**")
+                btn_col1, btn_col2, btn_col3 = st.columns(3)
+                with btn_col1:
+                    if st.button("2024", key="year_2024_btn", use_container_width=True):
+                        st.session_state['tracker_start_date_value'] = max(min_date, date_type(2024, 1, 1))
+                        st.session_state['tracker_end_date_value'] = min(max_date, date_type(2024, 12, 31))
+                        st.rerun()
+                with btn_col2:
+                    if st.button("2025", key="year_2025_btn", use_container_width=True):
+                        st.session_state['tracker_start_date_value'] = max(min_date, date_type(2025, 1, 1))
+                        st.session_state['tracker_end_date_value'] = min(max_date, date_type(2025, 12, 31))
+                        st.rerun()
+                with btn_col3:
+                    if st.button("2026", key="year_2026_btn", use_container_width=True):
+                        st.session_state['tracker_start_date_value'] = max(min_date, date_type(2026, 1, 1))
+                        st.session_state['tracker_end_date_value'] = min(max_date, date_type(2026, 12, 31))
+                        st.rerun()
             
             # Filter by date range
             filtered_tracker = tracker_df[
@@ -2256,12 +2283,11 @@ ALL day × lookback combos:
                 display_tracker['Date'] = display_tracker['Date'].dt.strftime('%Y-%m-%d')
                 display_tracker['Profit'] = display_tracker['Profit'].apply(lambda x: f"${x:,.0f}")
                 display_tracker['Accum_Profit'] = display_tracker['Accum_Profit'].apply(lambda x: f"${x:,.0f}")
-                display_tracker['Win_Rate'] = display_tracker['Win_Rate'].apply(lambda x: f"{x:.1%}")
                 display_tracker['Lookback'] = display_tracker['Lookback'].apply(lambda x: f"{x} wks")
                 
-                display_cols = ['Date', 'Day', 'Entry_Time', 'Profit', 'Accum_Profit', 'Trades', 'Win_Rate', 'Lookback']
+                display_cols = ['Date', 'Day', 'Entry_Time', 'Profit', 'Accum_Profit', 'Lookback']
                 display_tracker = display_tracker[display_cols]
-                display_tracker.columns = ['Date', 'Day', 'Entry Time', 'Profit', 'Accum Profit', 'Trades', 'Win Rate', 'Lookback']
+                display_tracker.columns = ['Date', 'Day', 'Entry Time', 'Profit', 'Accum Profit', 'Lookback']
                 
                 # Show table with scrolling
                 st.dataframe(display_tracker, use_container_width=True, height=400)
