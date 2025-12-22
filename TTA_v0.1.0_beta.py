@@ -2229,6 +2229,7 @@ ALL day × lookback combos:
                 
                 # Equity Curve Chart
                 st.markdown("**Equity Curve:**")
+                st.caption("💡 Hover over chart for zoom, pan, and download options (top-right corner)")
                 
                 # Theme-aware chart colors
                 if theme == "Light":
