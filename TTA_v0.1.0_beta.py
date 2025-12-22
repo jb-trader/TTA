@@ -2294,6 +2294,30 @@ ALL day × lookback combos:
             if 'selected_year' not in st.session_state:
                 st.session_state['selected_year'] = None
             
+            # Validate and clamp dates to valid range (handles strategy switching)
+            current_start = st.session_state['tracker_start_input']
+            current_end = st.session_state['tracker_end_input']
+            
+            # Clamp start date to valid range
+            if current_start < min_date:
+                st.session_state['tracker_start_input'] = min_date
+            elif current_start > max_date:
+                st.session_state['tracker_start_input'] = min_date
+            
+            # Clamp end date to valid range
+            if current_end > max_date:
+                st.session_state['tracker_end_input'] = max_date
+            elif current_end < min_date:
+                st.session_state['tracker_end_input'] = max_date
+            
+            # Clear year selection if dates are out of range
+            if st.session_state.get('selected_year'):
+                year = st.session_state['selected_year']
+                year_start = date_type(year, 1, 1)
+                year_end = date_type(year, 12, 31)
+                if year_start > max_date or year_end < min_date:
+                    st.session_state['selected_year'] = None
+            
             # Define callback functions for year buttons
             def select_year(year):
                 year_start = max(min_date, date_type(year, 1, 1))
