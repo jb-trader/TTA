@@ -423,6 +423,16 @@ def get_theme_css(theme):
             border-color: #1e7e34 !important;
             box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.5) !important;
         }}
+        
+        /* ========================================
+           SECONDARY BUTTON - ENSURE TEXT VISIBLE
+           ======================================== */
+        button[data-testid="stBaseButton-secondary"] {{
+            color: {text_color} !important;
+        }}
+        button[data-testid="stBaseButton-secondary"] p {{
+            color: {text_color} !important;
+        }}
     </style>
     """
 
@@ -1610,7 +1620,7 @@ This is a research/analysis tool, not a signal service. It is based on M8B versi
                     .flash-warning-text {
                         font-size: 20px;
                         font-weight: bold;
-                        color: #856404;
+                        color: #000000 !important;
                     }
                 </style>
                 <div class="flash-warning-container">
