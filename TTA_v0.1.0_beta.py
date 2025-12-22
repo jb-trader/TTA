@@ -2100,7 +2100,11 @@ ALL day × lookback combos:
             
             from datetime import date as date_type
             
-            # Initialize selected_year tracker
+            # Initialize session state BEFORE widgets are created (only on first run)
+            if 'tracker_start_input' not in st.session_state:
+                st.session_state['tracker_start_input'] = min_date
+            if 'tracker_end_input' not in st.session_state:
+                st.session_state['tracker_end_input'] = max_date
             if 'selected_year' not in st.session_state:
                 st.session_state['selected_year'] = None
             
@@ -2118,7 +2122,6 @@ ALL day × lookback combos:
             with date_col1:
                 start_date = st.date_input(
                     "Start Date",
-                    value=min_date,
                     min_value=min_date,
                     max_value=max_date,
                     key="tracker_start_input",
@@ -2128,7 +2131,6 @@ ALL day × lookback combos:
             with date_col2:
                 end_date = st.date_input(
                     "End Date",
-                    value=max_date,
                     min_value=min_date,
                     max_value=max_date,
                     key="tracker_end_input",
