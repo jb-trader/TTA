@@ -429,9 +429,47 @@ def get_theme_css(theme):
            ======================================== */
         button[data-testid="stBaseButton-secondary"] {{
             color: {text_color} !important;
+            background-color: {sidebar_bg} !important;
+            border: 1px solid {border_color} !important;
         }}
-        button[data-testid="stBaseButton-secondary"] p {{
+        button[data-testid="stBaseButton-secondary"]:hover {{
+            background-color: {table_header_bg} !important;
+        }}
+        button[data-testid="stBaseButton-secondary"] p,
+        button[data-testid="stBaseButton-secondary"] span,
+        button[data-testid="stBaseButton-secondary"] div,
+        button[data-testid="stBaseButton-secondary"] * {{
             color: {text_color} !important;
+        }}
+        
+        /* Broader selectors for button text */
+        [data-testid="stBaseButton-secondary"] {{
+            color: {text_color} !important;
+        }}
+        .stButton > button:not([kind="primary"]) {{
+            color: {text_color} !important;
+            background-color: {sidebar_bg} !important;
+        }}
+        .stButton > button:not([kind="primary"]) p {{
+            color: {text_color} !important;
+        }}
+        
+        /* Target all non-primary buttons */
+        button:not([data-testid="stBaseButton-primary"]) {{
+            color: {text_color} !important;
+        }}
+        
+        /* ========================================
+           FORCE WARNING TEXT TO BLACK
+           ======================================== */
+        .flash-warning-text {{
+            color: #000000 !important;
+        }}
+        .flash-warning-container {{
+            color: #000000 !important;
+        }}
+        .flash-warning-container * {{
+            color: #000000 !important;
         }}
     </style>
     """
@@ -1610,21 +1648,16 @@ This is a research/analysis tool, not a signal service. It is based on M8B versi
                     }
                     .flash-warning-container {
                         animation: flash 1.5s infinite;
-                        background-color: #fff3cd;
+                        background-color: #fff3cd !important;
                         border: 2px solid #ffc107;
                         border-radius: 8px;
                         padding: 15px 20px;
                         margin: 10px 0;
                         text-align: center;
                     }
-                    .flash-warning-text {
-                        font-size: 20px;
-                        font-weight: bold;
-                        color: #000000 !important;
-                    }
                 </style>
                 <div class="flash-warning-container">
-                    <span class="flash-warning-text">⚠️ Filter settings have changed.</span>
+                    <span style="font-size: 20px; font-weight: bold; color: #000000 !important;">⚠️ Filter settings have changed.</span>
                 </div>
                 """, unsafe_allow_html=True)
                 
@@ -2169,6 +2202,23 @@ ALL day × lookback combos:
                 )
             
             with date_col3:
+                # Add CSS to ensure button text is visible in dark mode
+                if theme == "Dark":
+                    st.markdown("""
+                    <style>
+                        /* Force Quick Select button text to white in dark mode */
+                        button[data-testid="stBaseButton-secondary"] {
+                            color: #ffffff !important;
+                            border-color: #ffffff !important;
+                        }
+                        button[data-testid="stBaseButton-secondary"] p {
+                            color: #ffffff !important;
+                        }
+                        button[data-testid="stBaseButton-secondary"] span {
+                            color: #ffffff !important;
+                        }
+                    </style>
+                    """, unsafe_allow_html=True)
                 st.markdown("**Quick Select:**")
                 selected_year = st.session_state.get('selected_year')
                 
