@@ -239,6 +239,28 @@ def get_theme_css(theme):
             display: none !important;
         }}
         
+        /* Flashing R² filter warning banner */
+        @keyframes flash-warning {{
+            0%, 100% {{ background-color: #fff3cd; }}
+            50% {{ background-color: #ffe066; }}
+        }}
+        .r2-warning-banner {{
+            animation: flash-warning 1.5s ease-in-out infinite;
+            padding: 20px;
+            border-radius: 8px;
+            border: 2px solid #ffc107;
+            margin: 10px 0;
+        }}
+        .r2-warning-banner p {{
+            font-size: 1.2rem !important;
+            color: #856404 !important;
+            margin: 0 !important;
+            line-height: 1.6 !important;
+        }}
+        .r2-warning-banner strong {{
+            font-size: 1.25rem !important;
+        }}
+        
         /* Download buttons - always black text on white background */
         .stDownloadButton button {{
             background-color: #ffffff !important;
@@ -1073,16 +1095,22 @@ def select_optimal_lookbacks(summary, min_r_squared=0.0):
                     suggested_threshold = round(best_r2_for_excluded - 0.05, 1)  # Suggest slightly below their best
                     suggested_threshold = max(0.0, suggested_threshold)  # Don't go negative
                     
-                    st.warning(
-                        f"⚠️ **R² filter (≥{min_r_squared}) excluded all lookbacks for: {excluded_list}**\n\n"
-                        f"👉 **To include these days:** Lower the *Min R²* slider in the sidebar "
-                        f"(try **{suggested_threshold:.1f}** or lower) and click **Run Walk-Forward Analysis**."
+                    st.markdown(
+                        f"""<div class="r2-warning-banner">
+                        <p>⚠️ <strong>R² filter (≥{min_r_squared}) excluded all lookbacks for: {excluded_list}</strong></p>
+                        <p>👉 <strong>To include these days:</strong> Lower the <em>Min R²</em> slider in the sidebar 
+                        (try <strong>{suggested_threshold:.1f}</strong> or lower) and click <strong>Run Walk-Forward Analysis</strong>.</p>
+                        </div>""",
+                        unsafe_allow_html=True
                     )
                 else:
-                    st.warning(
-                        f"⚠️ **R² filter (≥{min_r_squared}) excluded all lookbacks for: {excluded_list}**\n\n"
-                        f"👉 **To include these days:** Lower the *Min R²* slider in the sidebar "
-                        f"and click **Run Walk-Forward Analysis**."
+                    st.markdown(
+                        f"""<div class="r2-warning-banner">
+                        <p>⚠️ <strong>R² filter (≥{min_r_squared}) excluded all lookbacks for: {excluded_list}</strong></p>
+                        <p>👉 <strong>To include these days:</strong> Lower the <em>Min R²</em> slider in the sidebar 
+                        and click <strong>Run Walk-Forward Analysis</strong>.</p>
+                        </div>""",
+                        unsafe_allow_html=True
                     )
     else:
         filtered_summary = summary.copy()
