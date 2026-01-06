@@ -1140,7 +1140,7 @@ def select_optimal_lookbacks(summary, min_r_squared=0.0):
     return optimal_by_day
 
 
-def generate_performance_tracker(results_df, optimal_by_day, symbol, strategy):
+def generate_performance_tracker(results_df, optimal_by_day, symbol, strategy, filtered_df=None):
     """
     Generate performance tracker data showing historical walk-forward results.
     
@@ -1152,6 +1152,7 @@ def generate_performance_tracker(results_df, optimal_by_day, symbol, strategy):
         optimal_by_day: DataFrame with optimal lookback per day
         symbol: Trading symbol
         strategy: Strategy name
+        filtered_df: Trade-level data (optional, for consistent entry time calculation)
     
     Returns:
         DataFrame with trade-level performance data
@@ -1181,6 +1182,65 @@ def generate_performance_tracker(results_df, optimal_by_day, symbol, strategy):
             day_offset = WEEKDAY_ORDER.get(day, 0)
             trade_date = week_start + timedelta(days=day_offset)
             
+            # Compute entry time using Trade Plan methodology (consistent with get_week_recommendations)
+            # This ensures the Trade History matches what the Trade Plan would have shown
+            if filtered_df is not None and not filtered_df.empty:
+                # Match get_week_recommendations logic for "Current Week" (week_offset=0):
+                # reference_week_start = current_week_start - 1 week
+                # So for a historical test_week, we use test_week - 1 week as reference
+                reference_week_start = pd.Timestamp(week_start) - timedelta(weeks=1)
+                # Lookback window: from (reference - optimal_lb weeks) to previous Friday of test week
+                lookback_start = reference_week_start - timedelta(weeks=optimal_lb)
+                lookback_end = pd.Timestamp(week_start) - timedelta(days=3)  # Friday before test week
+                
+                # Get training data for this day within the lookback window
+                train_data = filtered_df[
+                    (filtered_df['Date'].dt.date >= lookback_start.date()) & 
+                    (filtered_df['Date'].dt.date <= lookback_end.date()) &
+                    (filtered_df['Day_of_week'] == day)
+                ].copy()
+                
+                if not train_data.empty:
+                    # Calculate stats by Entry_Time (same as get_week_recommendations)
+                    stats = train_data.groupby('Entry_Time').agg(
+                        avg_profit=('Profit', 'mean')
+                    ).reset_index()
+                    
+                    if not stats.empty:
+                        # Get the best Entry_Time by avg profit
+                        best_entry_time = stats.loc[stats['avg_profit'].idxmax(), 'Entry_Time']
+                        
+                        # Look up actual profit for THIS entry time on the trade date
+                        trade_date_for_lookup = pd.Timestamp(trade_date).date() if not isinstance(trade_date, pd.Timestamp) else trade_date.date()
+                        actual_trades = filtered_df[
+                            (filtered_df['Date'].dt.date == trade_date_for_lookup) &
+                            (filtered_df['Entry_Time'] == best_entry_time)
+                        ]
+                        
+                        if not actual_trades.empty:
+                            actual_profit = actual_trades['Profit'].sum()
+                            actual_trade_count = len(actual_trades)
+                            win_rate = (actual_trades['Profit'] > 0).mean()
+                        else:
+                            # Entry time recommended but no trade data for that slot
+                            actual_profit = 0
+                            actual_trade_count = 0
+                            win_rate = 0
+                        
+                        tracker_rows.append({
+                            'Symbol': symbol,
+                            'Strategy': strategy,
+                            'Date': trade_date,
+                            'Day': day,
+                            'Entry_Time': best_entry_time,
+                            'Profit': actual_profit,
+                            'Trades': actual_trade_count,
+                            'Win_Rate': win_rate,
+                            'Lookback': optimal_lb
+                        })
+                        continue
+            
+            # Fallback to walk-forward predicted entry time if filtered_df not available
             tracker_rows.append({
                 'Symbol': symbol,
                 'Strategy': strategy,
@@ -2247,7 +2307,7 @@ ALL day × lookback combos:
         
         # Generate tracker data
         tracker_df = generate_performance_tracker(
-            results_df, optimal_by_day, selected_symbol, selected_name
+            results_df, optimal_by_day, selected_symbol, selected_name, filtered_df
         )
         
         if tracker_df.empty:
