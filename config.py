@@ -1,50 +1,28 @@
-"""
-Configuration file for TTA (Time Trends Auto)
+from datetime import datetime, time, timedelta
+from zoneinfo import ZoneInfo
 
-Works with:
-- Railway (environment variables)
-- Streamlit Cloud (st.secrets)
-- Local development (fallback)
-"""
+def current_data_version_at_430_et() -> str:
+    now_et = datetime.now(ZoneInfo("America/New_York"))
+    cutoff = time(16, 30)  # 4:30 pm ET
+    data_day = now_et.date() if now_et.time() >= cutoff else (now_et - timedelta(days=1)).date()
+    return data_day.strftime("%Y-%m-%d")
 
-import os
-import streamlit as st
+GOOGLE_DRIVE_FILE_ID = "1-N9DUSIxm0zSE9YEor0G9F1IoUwbSQG9"
 
-# ============================================================================
-# GOOGLE DRIVE DATA SOURCE
-# ============================================================================
+def get_data_version() -> str:
+    """Compute version each call so it flips at 4:30pm ET without reload."""
+    return current_data_version_at_430_et()
 
-def get_file_id():
-    """
-    Get Google Drive file ID from environment variable, Streamlit secrets, or fallback.
-    """
-    # 1. Try environment variable (Railway)
-    file_id = os.environ.get("GOOGLE_DRIVE_FILE_ID")
-    if file_id:
-        return file_id
-    
-    # 2. Try Streamlit secrets (Streamlit Cloud)
-    try:
-        return st.secrets["GOOGLE_DRIVE_FILE_ID"]
-    except (KeyError, FileNotFoundError):
-        pass
-    
-    # 3. Local development fallback
-    return "YOUR_FILE_ID_HERE"
+def get_data_url() -> str:
+    """Include version query to bust HTTP caches."""
+    return f"https://drive.google.com/uc?export=download&id={GOOGLE_DRIVE_FILE_ID}&v={get_data_version()}"
 
+# Meta
+VERSION = "2.0.0"
+DEPLOYMENT = "Cloud"
+LAST_DATA_UPDATE = "Updates daily after market close"
 
-def get_data_url():
-    """Build the Google Drive download URL."""
-    file_id = get_file_id()
-    return f"https://drive.google.com/uc?id={file_id}&export=download"
-
-
-def get_data_version():
-    """
-    Return a version string for cache busting.
-    Change this when your data file updates to force a reload.
-    """
-    return "2024-12-18-v1"
+# FOMC_DATES and EARNINGS_DATES ... (your lists are fine)
 
 
 # Exclusion dates
@@ -71,9 +49,6 @@ EARNINGS_DATES = [
     "2025-04-29", "2025-04-30", "2025-05-01", "2025-05-21",
     "2025-07-29", "2025-07-30", "2025-07-31", "2025-08-01",
     "2025-08-20", "2025-10-28", "2025-10-29", "2025-10-30",
-    "2025-11-19", "2026-01-28", "2026-01-29", "2026-02-18", 
-    "2026-04-28", "2026-04-29", "2026-04-30", "2026-05-20", 
-    "2026-07-28", "2026-07-29", "2026-07-30", "2026-08-19", 
-    "2026-10-27", "2026-10-28", "2026-10-29", "2026-11-18", 
-    "2026-02-25", "2026-02-05", "2026-02-03"
+    "2025-11-19", "2026-01-26", "2026-01-28", "2026-01-29",
+    "2026-02-04", "2026-02-05", "2026-02-25"
 ]
