@@ -899,7 +899,6 @@ def get_r_squared_descriptor(r2):
 # WALK-FORWARD ANALYSIS (Per Day of Week) - SIMPLIFIED
 # ============================================================================
 
-@st.cache_data
 def precompute_weekly_stats(df):
     """
     Pre-compute aggregated stats by week × day × entry_time.
