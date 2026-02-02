@@ -1815,6 +1815,10 @@ This is a research/analysis tool, not a signal service. It is based on M8B versi
         st.session_state['max_lookback'] = max_lookback
         # Store filter settings used in this run
         st.session_state['last_run_filters'] = current_filters
+        # DEBUG: Store timestamp and data info
+        st.session_state['debug_last_run'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        st.session_state['debug_filtered_df_max'] = filtered_df['Date'].max()
+        st.session_state['debug_results_df_max_week'] = results_df['test_week'].max()
     
     # ========================================================================
     # DISPLAY RESULTS
@@ -2300,6 +2304,30 @@ ALL day × lookback combos:
         tracker_df = generate_performance_tracker(
             results_df, optimal_by_day, selected_symbol, selected_name, filtered_df
         )
+        
+        # DEBUG: Show results_df info
+        with st.expander("🔍 DEBUG: Walk-Forward Results Info", expanded=True):
+            if 'debug_last_run' in st.session_state:
+                st.write(f"**Last walk-forward run:** {st.session_state['debug_last_run']}")
+                st.write(f"**filtered_df max date at run time:** {st.session_state.get('debug_filtered_df_max', 'N/A')}")
+                st.write(f"**results_df max test_week at run time:** {st.session_state.get('debug_results_df_max_week', 'N/A')}")
+            else:
+                st.write("**No run timestamp found** - walk-forward may not have run yet")
+            st.write("---")
+            st.write(f"**Current results_df shape:** {results_df.shape}")
+            st.write(f"**Current results_df test_week range:** {results_df['test_week'].min()} to {results_df['test_week'].max()}")
+            st.write(f"**Last 5 test weeks in results_df:**")
+            last_weeks = sorted(results_df['test_week'].unique())[-5:]
+            for w in last_weeks:
+                st.write(f"  - {w}")
+            st.write("---")
+            st.write(f"**tracker_df shape:** {tracker_df.shape}")
+            if not tracker_df.empty:
+                st.write(f"**tracker_df date range:** {tracker_df['Date'].min()} to {tracker_df['Date'].max()}")
+                st.write(f"**Last 5 dates in tracker_df:**")
+                last_dates = sorted(tracker_df['Date'].unique())[-5:]
+                for d in last_dates:
+                    st.write(f"  - {d}")
         
         if tracker_df.empty:
             st.warning("No performance data available for the current filter settings.")
