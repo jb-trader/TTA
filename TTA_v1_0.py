@@ -1140,7 +1140,7 @@ def select_optimal_lookbacks(summary, min_r_squared=0.0):
     return optimal_by_day
 
 
-def generate_performance_tracker(results_df, optimal_by_day, symbol, strategy, filtered_df=None, dates_to_exclude=None):
+def generate_performance_tracker(results_df, optimal_by_day, symbol, strategy, filtered_df=None, dates_to_exclude=None, exclusion_map=None):
     """
     Generate performance tracker data showing historical walk-forward results.
     
@@ -1154,6 +1154,7 @@ def generate_performance_tracker(results_df, optimal_by_day, symbol, strategy, f
         strategy: Strategy name
         filtered_df: Trade-level data (optional, for consistent entry time calculation)
         dates_to_exclude: Set of dates to show as $0 profit (filtered by user settings)
+        exclusion_map: Dict mapping excluded dates to list of exclusion reasons
     
     Returns:
         DataFrame with trade-level performance data
@@ -1163,6 +1164,8 @@ def generate_performance_tracker(results_df, optimal_by_day, symbol, strategy, f
     
     if dates_to_exclude is None:
         dates_to_exclude = set()
+    if exclusion_map is None:
+        exclusion_map = {}
     
     tracker_rows = []
     
@@ -1191,6 +1194,9 @@ def generate_performance_tracker(results_df, optimal_by_day, symbol, strategy, f
             
             # Check if this date is excluded by user filters
             is_excluded = trade_date_obj in dates_to_exclude
+            
+            # Get exclusion reasons for this date
+            exclusion_reasons = ", ".join(exclusion_map.get(trade_date_obj, [])) if is_excluded else ""
             
             # Compute entry time using Trade Plan methodology (consistent with get_week_recommendations)
             # This ensures the Trade History matches what the Trade Plan would have shown
@@ -1231,7 +1237,8 @@ def generate_performance_tracker(results_df, optimal_by_day, symbol, strategy, f
                                 'Profit': 0,
                                 'Trades': 0,
                                 'Win_Rate': 0,
-                                'Lookback': optimal_lb
+                                'Lookback': optimal_lb,
+                                'Exclusions': exclusion_reasons
                             })
                             continue
                         
@@ -1261,7 +1268,8 @@ def generate_performance_tracker(results_df, optimal_by_day, symbol, strategy, f
                             'Profit': actual_profit,
                             'Trades': actual_trade_count,
                             'Win_Rate': win_rate,
-                            'Lookback': optimal_lb
+                            'Lookback': optimal_lb,
+                            'Exclusions': exclusion_reasons
                         })
                         continue
             
@@ -1277,7 +1285,8 @@ def generate_performance_tracker(results_df, optimal_by_day, symbol, strategy, f
                     'Profit': 0,
                     'Trades': 0,
                     'Win_Rate': 0,
-                    'Lookback': optimal_lb
+                    'Lookback': optimal_lb,
+                    'Exclusions': exclusion_reasons
                 })
             else:
                 tracker_rows.append({
@@ -1289,7 +1298,8 @@ def generate_performance_tracker(results_df, optimal_by_day, symbol, strategy, f
                     'Profit': row['actual_profit'],
                     'Trades': row['actual_trades'],
                     'Win_Rate': row['win_rate'],
-                    'Lookback': optimal_lb
+                    'Lookback': optimal_lb,
+                    'Exclusions': exclusion_reasons
                 })
     
     if not tracker_rows:
@@ -1670,28 +1680,50 @@ This is a research/analysis tool, not a signal service. It is based on M8B versi
     rebal_t2 = st.sidebar.checkbox("Second Prior Day (T-2)", value=True, help="Two trading days before month-end")
     rebal_qtr_only = st.sidebar.checkbox("Only Quarter End", value=False, help="Only exclude quarter-end dates (Mar, Jun, Sep, Dec)")
     
-    # Build dates to exclude (kept separate - NOT applied to filtered_df)
+    # Build dates to exclude with their reasons (kept separate - NOT applied to filtered_df)
     # This allows walk-forward to test all weeks, but excluded dates show $0 profit
     dates_to_exclude = set()
+    exclusion_map = {}  # Maps date -> list of exclusion reasons
     
-    # Add rebalancing dates
-    rebal_dates = get_rebalancing_dates_to_exclude(rebalancing_dates, rebal_month_end, rebal_t1, rebal_t2, rebal_qtr_only)
-    dates_to_exclude.update(rebal_dates)
+    def add_exclusion(date_set, reason):
+        """Helper to add dates to exclusion set and track reasons."""
+        for d in date_set:
+            dates_to_exclude.add(d)
+            if d not in exclusion_map:
+                exclusion_map[d] = []
+            exclusion_map[d].append(reason)
+    
+    # Add rebalancing dates with specific reasons
+    if rebal_month_end:
+        month_end_set = {d for d, info in rebalancing_dates.items() if info['type'] == 'month_end'}
+        if rebal_qtr_only:
+            month_end_set = {d for d in month_end_set if rebalancing_dates[d].get('is_quarter_end', False)}
+        add_exclusion(month_end_set, "EOM")
+    if rebal_t1:
+        t1_set = {d for d, info in rebalancing_dates.items() if info['type'] == 't_minus_1'}
+        if rebal_qtr_only:
+            t1_set = {d for d in t1_set if rebalancing_dates[d].get('is_quarter_end', False)}
+        add_exclusion(t1_set, "T-1")
+    if rebal_t2:
+        t2_set = {d for d, info in rebalancing_dates.items() if info['type'] == 't_minus_2'}
+        if rebal_qtr_only:
+            t2_set = {d for d in t2_set if rebalancing_dates[d].get('is_quarter_end', False)}
+        add_exclusion(t2_set, "T-2")
     
     # Add FOMC dates
     if exclude_fomc:
-        dates_to_exclude.update(fomc_dates)
+        add_exclusion(fomc_dates, "FOMC")
     
     # Add Earnings (E) dates
     if exclude_earnings_e:
-        dates_to_exclude.update(earnings_dates)
+        add_exclusion(earnings_dates, "Earn")
     
     # Add Earnings (E+1) dates
     if exclude_earnings_e1:
-        dates_to_exclude.update(earnings_plus1_dates)
+        add_exclusion(earnings_plus1_dates, "E+1")
     
     # NOTE: Date exclusions are NOT applied to filtered_df here.
-    # Instead, dates_to_exclude is passed to generate_performance_tracker
+    # Instead, dates_to_exclude and exclusion_map are passed to generate_performance_tracker
     # which shows $0 profit for excluded dates (so users see all dates).
     
     # Apply butterfly strike liquidity filter
@@ -1852,6 +1884,7 @@ This is a research/analysis tool, not a signal service. It is based on M8B versi
         st.session_state['optimal_by_day'] = optimal_by_day
         st.session_state['filtered_df'] = filtered_df
         st.session_state['dates_to_exclude'] = dates_to_exclude  # Store excluded dates
+        st.session_state['exclusion_map'] = exclusion_map  # Store exclusion reasons
         st.session_state['selected_symbol'] = selected_symbol
         st.session_state['selected_name'] = selected_name
         st.session_state['min_r_squared'] = min_r_squared
@@ -1917,6 +1950,7 @@ This is a research/analysis tool, not a signal service. It is based on M8B versi
         optimal_by_day = st.session_state['optimal_by_day']
         filtered_df = st.session_state['filtered_df']
         dates_to_exclude = st.session_state.get('dates_to_exclude', set())  # Get excluded dates
+        exclusion_map = st.session_state.get('exclusion_map', {})  # Get exclusion reasons
         selected_symbol = st.session_state['selected_symbol']
         selected_name = st.session_state['selected_name']
         
@@ -2342,7 +2376,7 @@ ALL day × lookback combos:
         
         # Generate tracker data
         tracker_df = generate_performance_tracker(
-            results_df, optimal_by_day, selected_symbol, selected_name, filtered_df, dates_to_exclude
+            results_df, optimal_by_day, selected_symbol, selected_name, filtered_df, dates_to_exclude, exclusion_map
         )
         
         if tracker_df.empty:
@@ -2637,9 +2671,9 @@ ALL day × lookback combos:
                 display_tracker['Profit'] = display_tracker['Profit'].apply(lambda x: f"${x:,.0f}")
                 display_tracker['Accum_Profit'] = display_tracker['Accum_Profit'].apply(lambda x: f"${x:,.0f}")
                 
-                display_cols = ['Date', 'Day', 'Entry_Time', 'Profit', 'Accum_Profit']
+                display_cols = ['Date', 'Day', 'Entry_Time', 'Profit', 'Accum_Profit', 'Exclusions']
                 display_tracker = display_tracker[display_cols]
-                display_tracker.columns = ['Date', 'Day', 'Entry Time', 'Profit', 'Accum Profit']
+                display_tracker.columns = ['Date', 'Day', 'Entry Time', 'Profit', 'Accum Profit', 'Exclusions']
                 
                 # Show table with scrolling
                 st.dataframe(display_tracker, use_container_width=True, height=400)
