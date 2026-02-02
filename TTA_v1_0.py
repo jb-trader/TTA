@@ -1400,23 +1400,15 @@ def main():
         current_week_offset = 0 if current_week_selection == "Current Week" else 1
         
         # Recalculate target dates based on CURRENT selection
-        # Use the stored filtered_df to get max_date
-        if 'filtered_df' in st.session_state:
-            stored_df = st.session_state['filtered_df']
-            max_date = stored_df['Date'].max().date()
-            current_week_start = get_week_start(max_date)
-            
-            if current_week_offset == 0:
-                target_monday = current_week_start
-                target_friday = target_monday + timedelta(days=4)
-            else:
-                target_monday = current_week_start + timedelta(weeks=1)
-                target_friday = target_monday + timedelta(days=4)
+        # Use calendar-based week start (consistent with display section)
+        current_week_start = get_display_week_start()
+        
+        if current_week_offset == 0:
+            target_monday = current_week_start
+            target_friday = target_monday + timedelta(days=4)
         else:
-            # Fallback to stored values
-            target_monday = rec_data['target_monday']
-            target_friday = rec_data['target_friday']
-            current_week_selection = rec_data['week_type']
+            target_monday = current_week_start + timedelta(weeks=1)
+            target_friday = target_monday + timedelta(days=4)
         
         pdf_bytes = generate_trade_plan_pdf(
             week_type=current_week_selection,
