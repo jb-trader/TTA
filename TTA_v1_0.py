@@ -11,7 +11,7 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import plotly.graph_objects as go
-from datetime import datetime, timedelta, time
+from datetime import datetime, timedelta, time, date
 from calendar import monthrange
 from pathlib import Path
 import warnings
@@ -899,6 +899,7 @@ def get_r_squared_descriptor(r2):
 # WALK-FORWARD ANALYSIS (Per Day of Week) - SIMPLIFIED
 # ============================================================================
 
+@st.cache_data
 def precompute_weekly_stats(df):
     """
     Pre-compute aggregated stats by week × day × entry_time.
@@ -1139,7 +1140,7 @@ def select_optimal_lookbacks(summary, min_r_squared=0.0):
     return optimal_by_day
 
 
-def generate_performance_tracker(results_df, optimal_by_day, symbol, strategy, filtered_df=None):
+def generate_performance_tracker(results_df, optimal_by_day, symbol, strategy, filtered_df=None, dates_to_exclude=None):
     """
     Generate performance tracker data showing historical walk-forward results.
     
@@ -1152,12 +1153,16 @@ def generate_performance_tracker(results_df, optimal_by_day, symbol, strategy, f
         symbol: Trading symbol
         strategy: Strategy name
         filtered_df: Trade-level data (optional, for consistent entry time calculation)
+        dates_to_exclude: Set of dates to show as $0 profit (filtered by user settings)
     
     Returns:
         DataFrame with trade-level performance data
     """
     if results_df is None or results_df.empty or optimal_by_day is None:
         return pd.DataFrame()
+    
+    if dates_to_exclude is None:
+        dates_to_exclude = set()
     
     tracker_rows = []
     
@@ -1180,6 +1185,12 @@ def generate_performance_tracker(results_df, optimal_by_day, symbol, strategy, f
             week_start = row['test_week']
             day_offset = WEEKDAY_ORDER.get(day, 0)
             trade_date = week_start + timedelta(days=day_offset)
+            
+            # Convert trade_date to date object for comparison
+            trade_date_obj = trade_date if isinstance(trade_date, date) else trade_date.date() if hasattr(trade_date, 'date') else trade_date
+            
+            # Check if this date is excluded by user filters
+            is_excluded = trade_date_obj in dates_to_exclude
             
             # Compute entry time using Trade Plan methodology (consistent with get_week_recommendations)
             # This ensures the Trade History matches what the Trade Plan would have shown
@@ -1208,6 +1219,21 @@ def generate_performance_tracker(results_df, optimal_by_day, symbol, strategy, f
                     if not stats.empty:
                         # Get the best Entry_Time by avg profit
                         best_entry_time = stats.loc[stats['avg_profit'].idxmax(), 'Entry_Time']
+                        
+                        # If date is excluded, show $0 profit but still include the row
+                        if is_excluded:
+                            tracker_rows.append({
+                                'Symbol': symbol,
+                                'Strategy': strategy,
+                                'Date': trade_date,
+                                'Day': day,
+                                'Entry_Time': best_entry_time,
+                                'Profit': 0,
+                                'Trades': 0,
+                                'Win_Rate': 0,
+                                'Lookback': optimal_lb
+                            })
+                            continue
                         
                         # Look up actual profit for THIS entry time on the trade date
                         trade_date_for_lookup = pd.Timestamp(trade_date).date() if not isinstance(trade_date, pd.Timestamp) else trade_date.date()
@@ -1240,17 +1266,31 @@ def generate_performance_tracker(results_df, optimal_by_day, symbol, strategy, f
                         continue
             
             # Fallback to walk-forward predicted entry time if filtered_df not available
-            tracker_rows.append({
-                'Symbol': symbol,
-                'Strategy': strategy,
-                'Date': trade_date,
-                'Day': day,
-                'Entry_Time': row['predicted_entry_time'],
-                'Profit': row['actual_profit'],
-                'Trades': row['actual_trades'],
-                'Win_Rate': row['win_rate'],
-                'Lookback': optimal_lb
-            })
+            # Also handle excluded dates in fallback path
+            if is_excluded:
+                tracker_rows.append({
+                    'Symbol': symbol,
+                    'Strategy': strategy,
+                    'Date': trade_date,
+                    'Day': day,
+                    'Entry_Time': row['predicted_entry_time'],
+                    'Profit': 0,
+                    'Trades': 0,
+                    'Win_Rate': 0,
+                    'Lookback': optimal_lb
+                })
+            else:
+                tracker_rows.append({
+                    'Symbol': symbol,
+                    'Strategy': strategy,
+                    'Date': trade_date,
+                    'Day': day,
+                    'Entry_Time': row['predicted_entry_time'],
+                    'Profit': row['actual_profit'],
+                    'Trades': row['actual_trades'],
+                    'Win_Rate': row['win_rate'],
+                    'Lookback': optimal_lb
+                })
     
     if not tracker_rows:
         return pd.DataFrame()
@@ -1630,7 +1670,8 @@ This is a research/analysis tool, not a signal service. It is based on M8B versi
     rebal_t2 = st.sidebar.checkbox("Second Prior Day (T-2)", value=True, help="Two trading days before month-end")
     rebal_qtr_only = st.sidebar.checkbox("Only Quarter End", value=False, help="Only exclude quarter-end dates (Mar, Jun, Sep, Dec)")
     
-    # Build dates to exclude
+    # Build dates to exclude (kept separate - NOT applied to filtered_df)
+    # This allows walk-forward to test all weeks, but excluded dates show $0 profit
     dates_to_exclude = set()
     
     # Add rebalancing dates
@@ -1649,8 +1690,9 @@ This is a research/analysis tool, not a signal service. It is based on M8B versi
     if exclude_earnings_e1:
         dates_to_exclude.update(earnings_plus1_dates)
     
-    if dates_to_exclude:
-        filtered_df = filtered_df[~filtered_df['Date'].dt.date.isin(dates_to_exclude)]
+    # NOTE: Date exclusions are NOT applied to filtered_df here.
+    # Instead, dates_to_exclude is passed to generate_performance_tracker
+    # which shows $0 profit for excluded dates (so users see all dates).
     
     # Apply butterfly strike liquidity filter
     if exclude_illiquid_strikes and 'center_strike' in filtered_df.columns:
@@ -1809,16 +1851,13 @@ This is a research/analysis tool, not a signal service. It is based on M8B versi
         st.session_state['summary_df'] = summary_df
         st.session_state['optimal_by_day'] = optimal_by_day
         st.session_state['filtered_df'] = filtered_df
+        st.session_state['dates_to_exclude'] = dates_to_exclude  # Store excluded dates
         st.session_state['selected_symbol'] = selected_symbol
         st.session_state['selected_name'] = selected_name
         st.session_state['min_r_squared'] = min_r_squared
         st.session_state['max_lookback'] = max_lookback
         # Store filter settings used in this run
         st.session_state['last_run_filters'] = current_filters
-        # DEBUG: Store timestamp and data info
-        st.session_state['debug_last_run'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        st.session_state['debug_filtered_df_max'] = filtered_df['Date'].max()
-        st.session_state['debug_results_df_max_week'] = results_df['test_week'].max()
     
     # ========================================================================
     # DISPLAY RESULTS
@@ -1877,6 +1916,7 @@ This is a research/analysis tool, not a signal service. It is based on M8B versi
         results_df = st.session_state['results_df']
         optimal_by_day = st.session_state['optimal_by_day']
         filtered_df = st.session_state['filtered_df']
+        dates_to_exclude = st.session_state.get('dates_to_exclude', set())  # Get excluded dates
         selected_symbol = st.session_state['selected_symbol']
         selected_name = st.session_state['selected_name']
         
@@ -2302,32 +2342,8 @@ ALL day × lookback combos:
         
         # Generate tracker data
         tracker_df = generate_performance_tracker(
-            results_df, optimal_by_day, selected_symbol, selected_name, filtered_df
+            results_df, optimal_by_day, selected_symbol, selected_name, filtered_df, dates_to_exclude
         )
-        
-        # DEBUG: Show results_df info
-        with st.expander("🔍 DEBUG: Walk-Forward Results Info", expanded=True):
-            if 'debug_last_run' in st.session_state:
-                st.write(f"**Last walk-forward run:** {st.session_state['debug_last_run']}")
-                st.write(f"**filtered_df max date at run time:** {st.session_state.get('debug_filtered_df_max', 'N/A')}")
-                st.write(f"**results_df max test_week at run time:** {st.session_state.get('debug_results_df_max_week', 'N/A')}")
-            else:
-                st.write("**No run timestamp found** - walk-forward may not have run yet")
-            st.write("---")
-            st.write(f"**Current results_df shape:** {results_df.shape}")
-            st.write(f"**Current results_df test_week range:** {results_df['test_week'].min()} to {results_df['test_week'].max()}")
-            st.write(f"**Last 5 test weeks in results_df:**")
-            last_weeks = sorted(results_df['test_week'].unique())[-5:]
-            for w in last_weeks:
-                st.write(f"  - {w}")
-            st.write("---")
-            st.write(f"**tracker_df shape:** {tracker_df.shape}")
-            if not tracker_df.empty:
-                st.write(f"**tracker_df date range:** {tracker_df['Date'].min()} to {tracker_df['Date'].max()}")
-                st.write(f"**Last 5 dates in tracker_df:**")
-                last_dates = sorted(tracker_df['Date'].unique())[-5:]
-                for d in last_dates:
-                    st.write(f"  - {d}")
         
         if tracker_df.empty:
             st.warning("No performance data available for the current filter settings.")
