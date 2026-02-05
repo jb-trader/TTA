@@ -785,31 +785,6 @@ def load_fomc_dates():
         return set()
 
 
-def load_earnings_dates():
-    """Load earnings dates from config (E: earnings day only)."""
-    try:
-        dates = set()
-        if hasattr(cfg, 'EARNINGS_DATES'):
-            earn = pd.to_datetime(cfg.EARNINGS_DATES, errors='coerce').dropna()
-            dates.update(d.date() for d in earn)
-        return dates
-    except Exception:
-        return set()
-
-
-def load_earnings_plus1_dates():
-    """Load earnings +1 dates from config (E+1: next business day after earnings)."""
-    try:
-        dates = set()
-        if hasattr(cfg, 'EARNINGS_DATES'):
-            earn = pd.to_datetime(cfg.EARNINGS_DATES, errors='coerce').dropna()
-            for d in earn:
-                next_day = d + pd.offsets.BDay(1)
-                dates.add(next_day.date())
-        return dates
-    except Exception:
-        return set()
-
 
 # ============================================================================
 # WEEK UTILITIES
@@ -1539,7 +1514,7 @@ def main():
 TTA is not designed to tell you when or what to trade. Instead, it provides analytical tools that you may choose to use to develop your own trade plan.
 
 Specifically, TTA:
-- Applies user-selected filters to exclude high-volatility days (FOMC, earnings, month-end rebalancing)
+- Applies user-selected filters to exclude high-volatility days (FOMC, month-end rebalancing)
 - Automatically finds the optimal lookback period for each day of the week using walk-forward testing (out-of-sample validation, not backtesting)
 - Outputs one potential entry time per day based on historical average profit, filtered by equity curve smoothness (R²)
 
@@ -1630,15 +1605,9 @@ This is a research/analysis tool, not a signal service. It is based on M8B versi
     max_date = filtered_df['Date'].max()
     rebalancing_dates = compute_rebalancing_dates(min_date.date(), max_date.date())
     fomc_dates = load_fomc_dates()
-    earnings_dates = load_earnings_dates()
-    earnings_plus1_dates = load_earnings_plus1_dates()
     
     # FOMC filter
     exclude_fomc = st.sidebar.checkbox("Exclude FOMC", value=False, help="FOMC announcement days")
-    
-    # Earnings filters - separate E and E+1
-    exclude_earnings_e = st.sidebar.checkbox("Exclude Earnings (E)", value=True, help="Major earnings announcement days")
-    exclude_earnings_e1 = st.sidebar.checkbox("Exclude Earnings (E+1)", value=True, help="Day after major earnings")
     
     # Butterfly Strike Liquidity filter - only show for Butterfly strategies
     exclude_illiquid_strikes = False
@@ -1713,14 +1682,6 @@ This is a research/analysis tool, not a signal service. It is based on M8B versi
     # Add FOMC dates
     if exclude_fomc:
         add_exclusion(fomc_dates, "FOMC")
-    
-    # Add Earnings (E) dates
-    if exclude_earnings_e:
-        add_exclusion(earnings_dates, "Earn")
-    
-    # Add Earnings (E+1) dates
-    if exclude_earnings_e1:
-        add_exclusion(earnings_plus1_dates, "E+1")
     
     # NOTE: Date exclusions are NOT applied to filtered_df here.
     # Instead, dates_to_exclude and exclusion_map are passed to generate_performance_tracker
@@ -1802,8 +1763,6 @@ This is a research/analysis tool, not a signal service. It is based on M8B versi
         'rebal_t2': rebal_t2,
         'rebal_qtr_only': rebal_qtr_only,
         'exclude_fomc': exclude_fomc,
-        'exclude_earnings_e': exclude_earnings_e,
-        'exclude_earnings_e1': exclude_earnings_e1,
         'exclude_illiquid_strikes': exclude_illiquid_strikes,
         'predict_distance_enabled': predict_distance_enabled,
         'predict_distance_value': predict_distance_value,
@@ -2391,10 +2350,6 @@ ALL day × lookback combos:
                     excl_list = []
                     if exclude_fomc:
                         excl_list.append("• FOMC")
-                    if exclude_earnings_e:
-                        excl_list.append("• Earnings (E)")
-                    if exclude_earnings_e1:
-                        excl_list.append("• Earnings (E+1)")
                     if rebal_month_end:
                         excl_list.append("• End of Month")
                     if rebal_t1:
@@ -2687,8 +2642,6 @@ ALL day × lookback combos:
                 
                 # Add filter settings columns
                 export_df['FOMC_Excluded'] = 'Yes' if exclude_fomc else 'No'
-                export_df['Earnings_E_Excluded'] = 'Yes' if exclude_earnings_e else 'No'
-                export_df['Earnings_E1_Excluded'] = 'Yes' if exclude_earnings_e1 else 'No'
                 export_df['Month_End_Excluded'] = 'Yes' if rebal_month_end else 'No'
                 export_df['T1_Excluded'] = 'Yes' if rebal_t1 else 'No'
                 export_df['T2_Excluded'] = 'Yes' if rebal_t2 else 'No'
