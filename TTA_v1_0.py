@@ -860,7 +860,7 @@ def get_r_squared_descriptor(r2):
     """
     if r2 >= 0.90:
         return "Excellent"
-    elif r2 >= 0.80:
+    elif r2 >= 0.:
         return "Strong"
     elif r2 >= 0.70:
         return "Good"
@@ -1631,7 +1631,7 @@ This is a research/analysis tool, not a signal service. It is based on M8B versi
                 "Distance Threshold",
                 min_value=1,
                 max_value=100,
-                value=18,
+                value=16,
                 step=1,
                 help="Include trades where |Center - Predicted| ≤ this value"
             )
@@ -1689,7 +1689,7 @@ This is a research/analysis tool, not a signal service. It is based on M8B versi
     
     # Apply butterfly strike liquidity filter
     if exclude_illiquid_strikes and 'center_strike' in filtered_df.columns:
-        illiquid_endings = {25, 40, 65, 80}
+        illiquid_endings = {25, 35, 40, 65, 80}
         filtered_df = filtered_df[~(filtered_df['center_strike'] % 100).isin(illiquid_endings)]
     
     # Apply Predict Distance filter (Butterfly only)
