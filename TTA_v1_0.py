@@ -1610,16 +1610,16 @@ This is a research/analysis tool, not a signal service. It is based on M8B versi
     exclude_fomc = st.sidebar.checkbox("Exclude FOMC", value=False, help="FOMC announcement days")
     
     # Butterfly Strike Liquidity filter - only show for Butterfly strategies
-    exclude_illiquid_strikes = False
-    predict_distance_enabled = False
-    predict_distance_value = 18
+    exclude_illiquid_strikes = True
+    predict_distance_enabled = True
+    predict_distance_value = 16
     skip_high_premium = False
     skip_premium_threshold = 35
     if 'Butterfly' in selected_name:
         exclude_illiquid_strikes = st.sidebar.checkbox(
-            "Exclude Illiquid Strikes (25/40/65/80)", 
+            "Exclude Illiquid Strikes (25/35/40/65/80)", 
             value=True,
-            help="Exclude butterfly trades where center strike ends in 25, 40, 65, or 80"
+            help="Exclude butterfly trades where center strike ends in 25, 35, 40, 65, or 80"
         )
         predict_distance_enabled = st.sidebar.checkbox(
             "Predict Distance Filter",
